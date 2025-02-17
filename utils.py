@@ -8,7 +8,9 @@ def read_file(filename):
     with open(filename, "r") as file:
         for line in file:
             line_number_original += 1
-            line = line.strip()  # Remove spaces and newlines
+
+            line=line.split("#", 1)[0]
+            line = line.strip()
             if not line:
                 continue
 
