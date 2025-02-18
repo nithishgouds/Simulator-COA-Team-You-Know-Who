@@ -11,16 +11,12 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 
 **Features:**<br>
 
-1.Instruction Support: Supports a range of instructions such as add, addi, sub, and, or, xor, lw, sw, beq, bne, etc.<br>
-2.Multicore Simulation: Models parallel execution across multiple cores.<br>
-3.Register and Memory Management: Simulates a register file and memory operations.<br>
-4.Instruction Pipeline (Planned): Supports basic pipeline modeling.<br>
-5.Detailed Output: Provides step-by-step execution details, including register and memory states.<br>
+1.Instruction Support: Supports a range of instructions such as add, addi, lw, sw, beq, bne, etc.<br>
+2.Register and Memory Management: Simulates a register file and memory operations.<br>
+3.Detailed Output: Provides step-by-step execution details, including register and memory states.<br>
 
 ---
 
 **Meeting Minutes:**<br>
 
 Doc link: https://docs.google.com/document/d/1_thrCWFOvNJG842vCXIY3W_ai4dKkXtvvPRttil83lo/edit?usp=sharing
-
----
