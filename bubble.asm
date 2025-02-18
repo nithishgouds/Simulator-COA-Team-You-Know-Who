@@ -12,13 +12,17 @@ addi x1 x0 21
 sw x1 20(x0)
 addi x1 x0 20
 sw x1 24(x0)
+addi x1 x0 19
+sw x1 28(x0)
+addi x1 x0 -6
+sw x1 32(x0)
 add x1 x0 x0
 
 
 
 
 
-addi x1 x0 7 # n length of array
+addi x1 x0 10 # n length of array
 
 addi x2 x0 0 # i - index of outer loop
 

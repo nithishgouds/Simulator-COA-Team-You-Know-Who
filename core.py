@@ -32,7 +32,9 @@ class Cores:
         #     print(f"Wrong instruction at PC {self.pc}: {instruction}")
         #     return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
-        parts = re.findall(r'\w+|\d+', pgm[self.pc])
+        #parts = re.findall(r'\w+|\d+', pgm[self.pc])
+        parts = re.findall(r'-?\w+', pgm[self.pc])
+
         if len(parts) == 0:
             print("parts is empty")
 
@@ -51,6 +53,12 @@ class Cores:
             immediate_value = int(parts[3])
             destination_value = self.registers[rs1] + immediate_value
             self.set_register(rd, destination_value)
+        elif opcode == "mul":#sub x1 x2 x3
+            rd = int(parts[1][1:])
+            rs1 = int(parts[2][1:])
+            rs2 = int(parts[3][1:])
+            destination_value = self.registers[rs1] * self.registers[rs2]
+            self.set_register(rd, destination_value)
         elif opcode == "sub":#sub x1 x2 x3
             rd = int(parts[1][1:])
             rs1 = int(parts[2][1:])
@@ -61,7 +69,7 @@ class Cores:
             rd = int(parts[1][1:])
             rs_offset = int(parts[2])
             rs_address = int(parts[3][1:])
-            effective_address = (rs_offset // 4) + self.registers[rs_address]
+            effective_address = (rs_offset  + self.registers[rs_address])//4
             effective_address = effective_address + self.coreid * 1024
             memory_value = mem[effective_address]
             destination_value = memory_value
@@ -70,7 +78,7 @@ class Cores:
             rs = int(parts[1][1:])
             offset = int(parts[2])
             base_address = int(parts[3][1:])
-            effective_address = (offset // 4) + self.registers[base_address]
+            effective_address = (offset + self.registers[base_address])//4
             effective_address = effective_address + self.coreid * 1024
             mem[effective_address] = self.registers[rs]
         elif opcode == "bne":#bne x1 x2 label
@@ -85,6 +93,8 @@ class Cores:
             rs1 = int(parts[1][1:])
             rs2 = int(parts[2][1:])
             label = parts[3]
+
+            print("v[rs1] = ",self.registers[rs1] ," v[rs2]", self.registers[rs2])
             
             if self.registers[rs1] < self.registers[rs2]:
                 new_pc = labels_map[label]
