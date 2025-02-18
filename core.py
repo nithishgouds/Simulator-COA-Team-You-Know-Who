@@ -1,4 +1,6 @@
 import re
+import sys
+
 
 class Cores:
     def __init__(self, cid):
@@ -6,32 +8,45 @@ class Cores:
         self.pc = 0
         self.coreid = cid
         self.debug=False
+        self.invalid_instruction_flag = False
 
     def set_register(self, index, value):
         if index != 0:  # Prevent modifying register 0
             self.registers[index] = value
 
-    # def validate(self, instruction):
-    #     patterns = {
-    #         "add": r"^add x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "addi": r"^addi x\d{1,2}, x\d{1,2}, -?\d+$",
-    #         "sub": r"^sub x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "lw": r"^lw x\d{1,2}, \d+\(x\d{1,2}\)$",
-    #         "sw": r"^sw x\d{1,2}, \d+\(x\d{1,2}\)$",
-    #         "bne": r"^bne x\d{1,2}, x\d{1,2}, \w+$",
-    #         "blt": r"^blt x\d{1,2}, x\d{1,2}, \w+$",
-    #         "jal": r"^jal( x\d{1,2},)? \w+$",
-    #         "j": r"^j \w+$",
-    #         "jalr": r"^jalr x\d{1,2}, x\d{1,2}, -?\d+$",
-    #         "sll": r"^sll x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "slli": r"^slli x\d{1,2}, x\d{1,2}, \d+$"
-    #     }
+    def validate(self, instruction):
+        patterns = {
+            "add": r"^add x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "addi": r"^addi x\d{1,2} x\d{1,2} -?\d+$",
+            "mul": r"^mul x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "sub": r"^sub x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "lw": r"^lw x\d{1,2} (\d+\(x\d{1,2}\)|\w+)$",
+            "sw": r"^sw x\d{1,2} \d+\(x\d{1,2}\)$",
+            "bne": r"^bne x\d{1,2} x\d{1,2} \w+$",
+            "blt": r"^blt x\d{1,2} x\d{1,2} \w+$",
+            "bge": r"^bge x\d{1,2} x\d{1,2} \w+$",
+            "jal": r"^jal( x\d{1,2})? \w+$",
+            "j": r"^j \w+$",
+            "jalr": r"^jalr x\d{1,2} x\d{1,2} -?\d+$",
+            "sll": r"^sll x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "slli": r"^slli x\d{1,2} x\d{1,2} \d+$"
+        }
+
+        for opcode, pattern in patterns.items():
+            if re.match(pattern, instruction):
+                return True
+        return False
     def execute(self, pgm, mem, clock, labels_map):
-        # instruction = pgm[self.pc]
-        # if not self.validate(instruction):
-        #     print(f"Wrong instruction at PC {self.pc}: {instruction}")
-        #     return
+        instruction = pgm[self.pc]
+        if not self.invalid_instruction_flag and not self.validate(instruction):
+            self.invalid_instruction_flag = True
+            print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
+            sys.exit() 
+            return
+        if self.invalid_instruction_flag:
+            return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
+        #print(labels_map)
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
         parts = re.findall(r'-?\w+', pgm[self.pc])
 
@@ -65,15 +80,22 @@ class Cores:
             rs2 = int(parts[3][1:])
             destination_value = self.registers[rs1] - self.registers[rs2]
             self.set_register(rd, destination_value)
-        elif opcode == "lw":#lw x1 8(x2)
-            rd = int(parts[1][1:])
-            rs_offset = int(parts[2])
-            rs_address = int(parts[3][1:])
-            effective_address = (rs_offset  + self.registers[rs_address])//4
-            effective_address = effective_address + self.coreid * 1024
-            memory_value = mem[effective_address]
-            destination_value = memory_value
-            self.set_register(rd, destination_value)
+        elif opcode == "lw":#lw x1 8(x2) ,, lw x2 base
+            if len(parts)==4:
+                rd = int(parts[1][1:])
+                rs_offset = int(parts[2])
+                rs_address = int(parts[3][1:])
+                effective_address = (rs_offset  + self.registers[rs_address])//4
+                effective_address = effective_address + self.coreid * 1024
+                memory_value = mem[effective_address]
+                destination_value = memory_value
+                self.set_register(rd, destination_value)
+            else:
+                rd = int(parts[1][1:])
+                label=parts[2]
+                memory_value=mem[labels_map[label]]
+                destination_value = memory_value
+                self.set_register(rd, destination_value)
         elif opcode == "sw":#sw x1 8(x2)
             rs = int(parts[1][1:])
             offset = int(parts[2])
@@ -94,12 +116,12 @@ class Cores:
             rs2 = int(parts[2][1:])
             label = parts[3]
 
-            print("v[rs1] = ",self.registers[rs1] ," v[rs2]", self.registers[rs2])
+            #print("v[rs1] = ",self.registers[rs1] ," v[rs2]", self.registers[rs2])
             
             if self.registers[rs1] < self.registers[rs2]:
                 new_pc = labels_map[label]
                 # if self.debug:
-                print("label:",label,"newpc:",new_pc,"prevpc:",self.pc)
+                #print("label:",label,"newpc:",new_pc,"prevpc:",self.pc)
                 #     exit()
                 self.pc = new_pc
                 pc_changed = True

@@ -1,9 +1,7 @@
 import simulation
-import utils
 
-instructions, labels_map = utils.read_file("bubble.asm")
-print(labels_map)
-sim = simulation.Simulator(instructions, labels_map)
+
+sim = simulation.Simulator()
 
 
 sim.run()
