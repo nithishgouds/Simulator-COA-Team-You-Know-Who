@@ -1,2 +1,3 @@
 .data
-add x0 x0 x0
+.text
+add h0 x0 x0

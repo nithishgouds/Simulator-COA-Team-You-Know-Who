@@ -20,7 +20,7 @@ class Cores:
             "addi": r"^addi x\d{1,2} x\d{1,2} -?\d+$",
             "mul": r"^mul x\d{1,2} x\d{1,2} x\d{1,2}$",
             "sub": r"^sub x\d{1,2} x\d{1,2} x\d{1,2}$",
-            "lw": r"^lw x\d{1,2} \d+\(x\d{1,2}\)$",
+            "lw": r"^lw x\d{1,2} (\d+\(x\d{1,2}\)|\w+)$",
             "sw": r"^sw x\d{1,2} \d+\(x\d{1,2}\)$",
             "bne": r"^bne x\d{1,2} x\d{1,2} \w+$",
             "blt": r"^blt x\d{1,2} x\d{1,2} \w+$",
