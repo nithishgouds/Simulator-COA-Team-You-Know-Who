@@ -10,7 +10,26 @@ class Cores:
         if index != 0:  # Prevent modifying register 0
             self.registers[index] = value
 
+    def validate(self, instruction):
+        patterns = {
+            "add": r"^add x\d{1,2}, x\d{1,2}, x\d{1,2}$",
+            "addi": r"^addi x\d{1,2}, x\d{1,2}, -?\d+$",
+            "sub": r"^sub x\d{1,2}, x\d{1,2}, x\d{1,2}$",
+            "lw": r"^lw x\d{1,2}, \d+\(x\d{1,2}\)$",
+            "sw": r"^sw x\d{1,2}, \d+\(x\d{1,2}\)$",
+            "bne": r"^bne x\d{1,2}, x\d{1,2}, \w+$",
+            "blt": r"^blt x\d{1,2}, x\d{1,2}, \w+$",
+            "jal": r"^jal( x\d{1,2},)? \w+$",
+            "j": r"^j \w+$",
+            "jalr": r"^jalr x\d{1,2}, x\d{1,2}, -?\d+$",
+            "sll": r"^sll x\d{1,2}, x\d{1,2}, x\d{1,2}$",
+            "slli": r"^slli x\d{1,2}, x\d{1,2}, \d+$"
+        }
     def execute(self, pgm, mem, clock, labels_map):
+        instruction = pgm[self.pc]
+        if not self.validate(instruction):
+            print(f"Wrong instruction at PC {self.pc}: {instruction}")
+            return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         parts = re.findall(r'\w+|\d+', pgm[self.pc])
         if len(parts) == 0:
