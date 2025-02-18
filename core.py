@@ -1,4 +1,6 @@
 import re
+import sys
+
 
 class Cores:
     def __init__(self, cid):
@@ -6,31 +8,43 @@ class Cores:
         self.pc = 0
         self.coreid = cid
         self.debug=False
+        self.invalid_instruction_flag = False
 
     def set_register(self, index, value):
         if index != 0:  # Prevent modifying register 0
             self.registers[index] = value
 
-    # def validate(self, instruction):
-    #     patterns = {
-    #         "add": r"^add x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "addi": r"^addi x\d{1,2}, x\d{1,2}, -?\d+$",
-    #         "sub": r"^sub x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "lw": r"^lw x\d{1,2}, \d+\(x\d{1,2}\)$",
-    #         "sw": r"^sw x\d{1,2}, \d+\(x\d{1,2}\)$",
-    #         "bne": r"^bne x\d{1,2}, x\d{1,2}, \w+$",
-    #         "blt": r"^blt x\d{1,2}, x\d{1,2}, \w+$",
-    #         "jal": r"^jal( x\d{1,2},)? \w+$",
-    #         "j": r"^j \w+$",
-    #         "jalr": r"^jalr x\d{1,2}, x\d{1,2}, -?\d+$",
-    #         "sll": r"^sll x\d{1,2}, x\d{1,2}, x\d{1,2}$",
-    #         "slli": r"^slli x\d{1,2}, x\d{1,2}, \d+$"
-    #     }
+    def validate(self, instruction):
+        patterns = {
+            "add": r"^add x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "addi": r"^addi x\d{1,2} x\d{1,2} -?\d+$",
+            "mul": r"^mul x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "sub": r"^sub x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "lw": r"^lw x\d{1,2} \d+\(x\d{1,2}\)$",
+            "sw": r"^sw x\d{1,2} \d+\(x\d{1,2}\)$",
+            "bne": r"^bne x\d{1,2} x\d{1,2} \w+$",
+            "blt": r"^blt x\d{1,2} x\d{1,2} \w+$",
+            "bge": r"^bge x\d{1,2} x\d{1,2} \w+$",
+            "jal": r"^jal( x\d{1,2})? \w+$",
+            "j": r"^j \w+$",
+            "jalr": r"^jalr x\d{1,2} x\d{1,2} -?\d+$",
+            "sll": r"^sll x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "slli": r"^slli x\d{1,2} x\d{1,2} \d+$"
+        }
+
+        for opcode, pattern in patterns.items():
+            if re.match(pattern, instruction):
+                return True
+        return False
     def execute(self, pgm, mem, clock, labels_map):
-        # instruction = pgm[self.pc]
-        # if not self.validate(instruction):
-        #     print(f"Wrong instruction at PC {self.pc}: {instruction}")
-        #     return
+        instruction = pgm[self.pc]
+        if not self.invalid_instruction_flag and not self.validate(instruction):
+            self.invalid_instruction_flag = True
+            print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
+            sys.exit() 
+            return
+        if self.invalid_instruction_flag:
+            return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
         parts = re.findall(r'-?\w+', pgm[self.pc])
