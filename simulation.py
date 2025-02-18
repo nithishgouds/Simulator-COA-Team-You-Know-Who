@@ -13,4 +13,4 @@ class Simulator:
             for i in range(4):
                 if self.cores[i].pc < len(self.program):
                     self.cores[i].execute(self.program, self.memory, self.clock, self.labels_map)
-            self.clock += 1
+                self.clock += 1
