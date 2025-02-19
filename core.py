@@ -51,7 +51,7 @@ class Cores:
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         #print(labels_map)
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
-        parts = re.split(r'\s*,?\s*', pgm[self.pc].strip())
+        parts = re.findall(r'-?\w+', pgm[self.pc])
 
         if len(parts) == 0:
             print("parts is empty")
