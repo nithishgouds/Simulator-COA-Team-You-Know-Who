@@ -3,13 +3,13 @@
 
 
 
-**Project Overview:**<br>
+## Project Overview:<br>
 
 This project is an Instruction Set Simulator built in Python to simulate the execution of various instructions such as add, addi, sub, and more. The simulator models a multi-core environment, demonstrating how instructions are fetched, decoded, executed, and how registers and memory are managed during program execution.
 
 ---
 
-**Features:**<br>
+## Features:<br>
 
 1.Instruction Support: Supports a range of instructions such as add, addi, lw, sw, beq, bne, etc.<br>
 2.Register and Memory Management: Simulates a register file and memory operations.<br>
@@ -17,6 +17,14 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 
 ---
 
-**Meeting Minutes:**<br>
+## Meeting Minutes:<br>
 
-Doc link: https://docs.google.com/document/d/1_thrCWFOvNJG842vCXIY3W_ai4dKkXtvvPRttil83lo/edit?usp=sharing
+Doc link: [Meeting Minutes](https://github.com/nithishgouds/Simulator-COA/blob/main/Meeting%20Minutes.md)
+
+
+---
+
+## Getting Started
+1. Clone the repository.
+2. Navigate to the project directory.
+3. Run the simulator using python main.py.
