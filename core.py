@@ -16,26 +16,29 @@ class Cores:
 
     def validate(self, instruction):
         patterns = {
-            "add": r"^add x\d{1,2} x\d{1,2} x\d{1,2}$",
-            "addi": r"^addi x\d{1,2} x\d{1,2} -?\d+$",
-            "mul": r"^mul x\d{1,2} x\d{1,2} x\d{1,2}$",
-            "sub": r"^sub x\d{1,2} x\d{1,2} x\d{1,2}$",
-            "lw": r"^lw x\d{1,2} (\d+\(x\d{1,2}\)|\w+)$",
-            "sw": r"^sw x\d{1,2} \d+\(x\d{1,2}\)$",
-            "bne": r"^bne x\d{1,2} x\d{1,2} \w+$",
-            "blt": r"^blt x\d{1,2} x\d{1,2} \w+$",
-            "bge": r"^bge x\d{1,2} x\d{1,2} \w+$",
-            "jal": r"^jal( x\d{1,2})? \w+$",
-            "j": r"^j \w+$",
-            "jalr": r"^jalr x\d{1,2} x\d{1,2} -?\d+$",
-            "sll": r"^sll x\d{1,2} x\d{1,2} x\d{1,2}$",
-            "slli": r"^slli x\d{1,2} x\d{1,2} \d+$"
+            "add": r"^add\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
+            "addi": r"^addi\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
+            "mul": r"^mul\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
+            "sub": r"^sub\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
+            "lw": r"^lw\s+x\d{1,2},?\s+(\d+\(x\d{1,2}\)|\w+)$",
+            "sw": r"^sw\s+x\d{1,2},?\s+\d+\(x\d{1,2}\)$",
+            "bne": r"^bne\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
+            "blt": r"^blt\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
+            "bge": r"^bge\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
+            "jal": r"^jal\s+(x\d{1,2},?\s+)?\w+$",
+            "j": r"^j\s+\w+$",
+            "jalr": r"^jalr\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
+            "sll": r"^sll\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
+            "slli": r"^slli\s+x\d{1,2},?\s+x\d{1,2},?\s+\d+$",
+            "la": r"^la\s+x\d{1,2},?\s+\w+$",  # Added "la x1, label"
+            "slt": r"^slt\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$"  # Added "slt x1, x2, x3"
         }
-
         for opcode, pattern in patterns.items():
             if re.match(pattern, instruction):
                 return True
         return False
+
+
     def execute(self, pgm, mem, clock, labels_map):
         instruction = pgm[self.pc]
         if not self.invalid_instruction_flag and not self.validate(instruction):
@@ -96,6 +99,13 @@ class Cores:
                 memory_value=mem[labels_map[label]]
                 destination_value = memory_value
                 self.set_register(rd, destination_value)
+        elif opcode == "la":#lw x1 label
+            rd = int(parts[1][1:])
+            label=parts[2]
+            label_value=labels_map[label]
+            print("label:",label," label val:",label_value)
+            destination_value = label_value*4
+            self.set_register(rd, destination_value)
         elif opcode == "sw":#sw x1 8(x2)
             rs = int(parts[1][1:])
             offset = int(parts[2])
@@ -103,6 +113,14 @@ class Cores:
             effective_address = (offset + self.registers[base_address])//4
             effective_address = effective_address + self.coreid * 1024
             mem[effective_address] = self.registers[rs]
+        elif opcode == "slt":#slt x1 x2 x3
+            rd = int(parts[1][1:])
+            rs1 = int(parts[2][1:])
+            rs2 = int(parts[3][1:])
+            destination_value = 0
+            if self.registers[rs1]<self.registers[rs2]:
+                destination_value=1
+            self.set_register(rd, destination_value)
         elif opcode == "bne":#bne x1 x2 label
             rs1 = int(parts[1][1:])
             rs2 = int(parts[2][1:])
