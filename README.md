@@ -20,3 +20,11 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 **Meeting Minutes:**<br>
 
 Doc link: https://docs.google.com/document/d/1_thrCWFOvNJG842vCXIY3W_ai4dKkXtvvPRttil83lo/edit?usp=sharing
+
+
+---
+
+## Getting Started
+1. Clone the repository.
+2. Navigate to the project directory.
+3. Run the simulator using python main.py.
