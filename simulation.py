@@ -10,7 +10,7 @@ class Simulator:
         self.labels_map = {}
 
     def run(self):
-        instructions,labels_map,data_array = utils.read_file("bubble3.asm")
+        instructions,labels_map,data_array = utils.read_file("test.asm")
         print(labels_map)
         self.program=instructions
         self.labels_map=labels_map
