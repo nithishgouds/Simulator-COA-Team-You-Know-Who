@@ -44,6 +44,7 @@ def read_file(filename):
 
             
             if data_store:
+                line=line.replace(',', ' ')
                 if ":" in line:
                     parts = line.split(":", 1)
                     if parts[0]=="":
@@ -63,7 +64,7 @@ def read_file(filename):
                         elif sub_parts[i].startswith("0b"):  # Binary
                             data_array.append(bin_to_signed_decimal(sub_parts[i]))
                         else:
-                            print("invalid declaration of data in line:",line_number_original,"only hex or binary")
+                            data_array.append(int(sub_parts[i]))
                         data_array_index+=1
                     
                 else:
@@ -78,7 +79,7 @@ def read_file(filename):
                         elif sub_parts[i].startswith("0b"):  # Binary
                             data_array.append(bin_to_signed_decimal(sub_parts[i]))
                         else:
-                            print("invalid declaration of data in line:",line_number_original,"only hex or binary")
+                            data_array.append(int(sub_parts[i]))
                         data_array_index+=1
                 
 

@@ -38,13 +38,13 @@ class Cores:
         return False
     def execute(self, pgm, mem, clock, labels_map):
         instruction = pgm[self.pc]
-        if not self.invalid_instruction_flag and not self.validate(instruction):
-            self.invalid_instruction_flag = True
-            print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
-            sys.exit() 
-            return
-        if self.invalid_instruction_flag:
-            return
+        # if not self.invalid_instruction_flag and not self.validate(instruction):
+        #     self.invalid_instruction_flag = True
+        #     print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
+        #     sys.exit() 
+        #     return
+        # if self.invalid_instruction_flag:
+        #     return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         #print(labels_map)
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
@@ -96,6 +96,13 @@ class Cores:
                 memory_value=mem[labels_map[label]]
                 destination_value = memory_value
                 self.set_register(rd, destination_value)
+        elif opcode == "la":#lw x1 label
+            rd = int(parts[1][1:])
+            label=parts[2]
+            label_value=labels_map[label]
+            print("label:",label," label val:",label_value)
+            destination_value = label_value*4
+            self.set_register(rd, destination_value)
         elif opcode == "sw":#sw x1 8(x2)
             rs = int(parts[1][1:])
             offset = int(parts[2])
@@ -103,6 +110,14 @@ class Cores:
             effective_address = (offset + self.registers[base_address])//4
             effective_address = effective_address + self.coreid * 1024
             mem[effective_address] = self.registers[rs]
+        elif opcode == "slt":#slt x1 x2 x3
+            rd = int(parts[1][1:])
+            rs1 = int(parts[2][1:])
+            rs2 = int(parts[3][1:])
+            destination_value = 0
+            if self.registers[rs1]<self.registers[rs2]:
+                destination_value=1
+            self.set_register(rd, destination_value)
         elif opcode == "bne":#bne x1 x2 label
             rs1 = int(parts[1][1:])
             rs2 = int(parts[2][1:])
