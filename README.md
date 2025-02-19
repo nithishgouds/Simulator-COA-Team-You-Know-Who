@@ -19,7 +19,7 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 
 ## Meeting Minutes:<br>
 
-Doc link: [Simulator]()
+Doc link: [Meeting Minutes](https://github.com/nithishgouds/Simulator-COA/blob/main/Meeting%20Minutes.md)
 
 
 ---
