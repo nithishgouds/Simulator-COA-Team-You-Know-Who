@@ -16,42 +16,39 @@ class Cores:
 
     def validate(self, instruction):
         patterns = {
-            "add": r"^add\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "addi": r"^addi\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
-            "mul": r"^mul\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "sub": r"^sub\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "lw": r"^lw\s+x\d{1,2},?\s+(\d+\(x\d{1,2}\)|\w+)$",
-            "sw": r"^sw\s+x\d{1,2},?\s+\d+\(x\d{1,2}\)$",
-            "bne": r"^bne\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "blt": r"^blt\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "bge": r"^bge\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "jal": r"^jal\s+(x\d{1,2},?\s+)?\w+$",
-            "j": r"^j\s+\w+$",
-            "jalr": r"^jalr\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
-            "sll": r"^sll\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "slli": r"^slli\s+x\d{1,2},?\s+x\d{1,2},?\s+\d+$",
-            "la": r"^la\s+x\d{1,2},?\s+\w+$",  # Added "la x1, label"
-            "slt": r"^slt\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$"  # Added "slt x1, x2, x3"
+            "add": r"^add x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "addi": r"^addi x\d{1,2} x\d{1,2} -?\d+$",
+            "mul": r"^mul x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "sub": r"^sub x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "lw": r"^lw x\d{1,2} (\d+\(x\d{1,2}\)|\w+)$",
+            "sw": r"^sw x\d{1,2} \d+\(x\d{1,2}\)$",
+            "bne": r"^bne x\d{1,2} x\d{1,2} \w+$",
+            "blt": r"^blt x\d{1,2} x\d{1,2} \w+$",
+            "bge": r"^bge x\d{1,2} x\d{1,2} \w+$",
+            "jal": r"^jal( x\d{1,2})? \w+$",
+            "j": r"^j \w+$",
+            "jalr": r"^jalr x\d{1,2} x\d{1,2} -?\d+$",
+            "sll": r"^sll x\d{1,2} x\d{1,2} x\d{1,2}$",
+            "slli": r"^slli x\d{1,2} x\d{1,2} \d+$"
         }
+
         for opcode, pattern in patterns.items():
             if re.match(pattern, instruction):
                 return True
         return False
-
-
     def execute(self, pgm, mem, clock, labels_map):
         instruction = pgm[self.pc]
-        if not self.invalid_instruction_flag and not self.validate(instruction):
-            self.invalid_instruction_flag = True
-            print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
-            sys.exit() 
-            return
-        if self.invalid_instruction_flag:
-            return
+        # if not self.invalid_instruction_flag and not self.validate(instruction):
+        #     self.invalid_instruction_flag = True
+        #     print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
+        #     sys.exit() 
+        #     return
+        # if self.invalid_instruction_flag:
+        #     return
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         #print(labels_map)
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
-        parts = re.split(r'\s*,?\s*', pgm[self.pc].strip())
+        parts = re.findall(r'-?\w+', pgm[self.pc])
 
         if len(parts) == 0:
             print("parts is empty")
