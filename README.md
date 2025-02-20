@@ -21,8 +21,8 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 
 Internal structure:<br>
 - Each core contains 32 registers
-- 4096*4 bytes of memory
-- In current version all cores are independent and each core can only access 1024*4 bytes of memory which is specific to each core
+- total size of memory = 4096*4 bytes 
+- In current version all cores are independent and each core can only access 1024*4 bytes of memory which is specific to that core
 ### Output is divided into 4 parts:
 - Part1: Clock cycle and core and insruction which is executed<br>
 - Part2: All register values of all cores<br>
@@ -41,4 +41,6 @@ Doc link: [Meeting Minutes](https://github.com/nithishgouds/Simulator-COA/blob/m
 ## Getting Started
 1. Clone the repository.
 2. Navigate to the project directory.
-3. Run the simulator using python main.py.
+3. Run the simulator using
+   ```bash
+   python main.py {filename.asm}
