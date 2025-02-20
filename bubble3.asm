@@ -1,7 +1,7 @@
 .data
 array:  .word 9 ,5 ,1 0b10 7 0xFFFFFFFF    # Unsorted array (5 elements)
 len:    .word 6   
-.word 3 3 3          
+         
 
 .text
   
