@@ -58,7 +58,11 @@ def read_file(filename):
 
                     for i in range(1,len(sub_parts)):
                         if i==1:
-                            labels_map[address_label]=data_array_index
+                            if address_label not in labels_map:
+                                labels_map[address_label]=data_array_index
+                            else:
+                                print("label:",address_label," is declared multiple times")
+                                exit()
                         if sub_parts[i].startswith("0x"):  # Hexadecimal
                             data_array.append(hex_to_signed_decimal(sub_parts[i]))
                         elif sub_parts[i].startswith("0b"):  # Binary
@@ -94,8 +98,17 @@ def read_file(filename):
                         quit()
 
                     if label.isidentifier():
-                        labels_map[label] = line_number
+                        # if label not in labels_map:
+                        #     labels_map[label] = line_number
+                        # else:
+                        #     print("label:",label," is already declared")
+                        #     exit()
                         if instruction:
+                            if label not in labels_map:
+                                labels_map[label] = line_number
+                            else:
+                                print("label:",label," is declared multiple times")
+                                exit()
                             lines_array.append(instruction)
                             line_number += 1
                         else:
@@ -106,7 +119,11 @@ def read_file(filename):
                         continue
 
                 if last_label is not None:
-                    labels_map[last_label] = line_number
+                    if last_label not in labels_map:
+                        labels_map[last_label] = line_number
+                    else:
+                        print("label:",last_label," is declared multiple times")
+                        exit()  
                     last_label = None
 
                 lines_array.append(line)

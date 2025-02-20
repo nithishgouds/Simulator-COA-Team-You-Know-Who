@@ -9,7 +9,7 @@ sim.run()
 for i in range(4):
     print(sim.cores[i].registers)
 
-print(sim.cores[0].pc)
+
 print("Total clock cycles:", sim.clock)
-for i in range(4):
-    print(sim.memory[0+i*1024]," ",sim.memory[1+i*1024]," ",sim.memory[2+i*1024]," ",sim.memory[3+i*1024]," ",sim.memory[4+i*1024]," ",sim.memory[5+i*1024]," ",sim.memory[6+i*1024]," ",sim.memory[7+i*1024]," ",sim.memory[8+i*1024]," ",sim.memory[9+i*1024])
+for i in range(512):
+    print(f"{i} = {sim.memory[i]} , {i+512} = {sim.memory[i+512]} , {i+512*2} = {sim.memory[i+512*2]} , {i+512*3} = {sim.memory[i+512*3]} , {i+512*4} = {sim.memory[i+512*4]} , {i+512*5} = {sim.memory[i+512*5]} , {i+512*6} = {sim.memory[i+512*6]} , {i+512*7} = {sim.memory[i+512*7]}")

@@ -25,6 +25,7 @@ class Cores:
             "bne": r"^bne\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
             "blt": r"^blt\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
             "bge": r"^bge\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
+            "beq": r"^beq\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
             "jal": r"^jal\s+(x\d{1,2},?\s+)?\w+$",
             "j": r"^j\s+\w+$",
             "jalr": r"^jalr\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
@@ -41,6 +42,7 @@ class Cores:
 
     def execute(self, pgm, mem, clock, labels_map):
         instruction = pgm[self.pc]
+        instruction=instruction.replace(",", " ")
         if not self.invalid_instruction_flag and not self.validate(instruction):
             self.invalid_instruction_flag = True
             print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
@@ -51,7 +53,9 @@ class Cores:
         print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
         #print(labels_map)
         #parts = re.findall(r'\w+|\d+', pgm[self.pc])
-        parts = re.findall(r'-?\w+', pgm[self.pc])
+        ins=pgm[self.pc]
+        ins=ins.replace(",", " ")
+        parts = re.findall(r'-?\w+', ins)
 
         if len(parts) == 0:
             print("parts is empty")
@@ -89,6 +93,9 @@ class Cores:
                 rs_offset = int(parts[2])
                 rs_address = int(parts[3][1:])
                 effective_address = (rs_offset  + self.registers[rs_address])//4
+                if effective_address < 0 or effective_address >=1024:
+                    print("error:memory out of bounds, can't access memory ")
+                    exit() 
                 effective_address = effective_address + self.coreid * 1024
                 memory_value = mem[effective_address]
                 destination_value = memory_value
@@ -111,6 +118,9 @@ class Cores:
             offset = int(parts[2])
             base_address = int(parts[3][1:])
             effective_address = (offset + self.registers[base_address])//4
+            if effective_address < 0 or effective_address >=1024:
+                print("error:memory out of bounds, can't access memory ")
+                exit() 
             effective_address = effective_address + self.coreid * 1024
             mem[effective_address] = self.registers[rs]
         elif opcode == "slt":#slt x1 x2 x3
@@ -149,6 +159,14 @@ class Cores:
             rs2 = int(parts[2][1:])
             label = parts[3]
             if self.registers[rs1] >= self.registers[rs2]:
+                new_pc = labels_map[label]
+                self.pc = new_pc
+                pc_changed = True
+        elif opcode == "beq":#bge x1 x2 label
+            rs1 = int(parts[1][1:])
+            rs2 = int(parts[2][1:])
+            label = parts[3]
+            if self.registers[rs1] == self.registers[rs2]:
                 new_pc = labels_map[label]
                 self.pc = new_pc
                 pc_changed = True
