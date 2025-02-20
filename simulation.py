@@ -1,5 +1,6 @@
 import core
 import utils
+import sys
 
 class Simulator:
     def __init__(self):
@@ -10,10 +11,17 @@ class Simulator:
         self.labels_map = {}
 
     def run(self):
-        instructions,labels_map,data_array = utils.read_file("bubble3.asm")
+        filename=""
+        if len(sys.argv) > 1:
+            filename=sys.argv[1]  # Print the first argument
+        else:
+            print("Error: No filename provided")
+        instructions,labels_map,data_array = utils.read_file(filename)
         print(labels_map)
         self.program=instructions
         self.labels_map=labels_map
+        if len(data_array) >= 1024:
+            print("error : memory overflow")
         for i in range(len(data_array)):
             self.memory[i+1024*0]=data_array[i]
             self.memory[i+1024*1]=data_array[i]
