@@ -30,7 +30,9 @@ class Cores:
         self.execution_time_rem_me=0
         self.latency_map={}
 
-        self.Data_Forwarding = True
+        self.stall_count=0
+
+        self.Data_Forwarding = False
         
 
     def set_register(self, index, value):
@@ -179,25 +181,33 @@ class Cores:
         if opcode in ["add","sub","mul","slt","sll"]:#opcode rd rs1 rs2
             decoded_fetched.append(parts[1]) #rd
             dest_id = int(parts[1][1:])
-            sr1_id = int(parts[2][1:])
-            sr2_id = int(parts[3][1:])
+            sr1_id = parts[2]
+            sr2_id = parts[3]
             stall=False
             sr1_data = None
             sr2_data = None
-            if  self.reg_status_active[sr1_id] > 0 or self.reg_status_active[sr2_id] > 0 :
-                if self.reg_status_active[sr1_id] > 0:
-                    sr1_from_forwarding = self.do_data_forwarding(sr1_id)
+            rs1_active_status = False
+            rs2_active_status = False
+            if sr1_id != "cid":
+                rs1_active_status = self.reg_status_active[int(parts[2][1:])] > 0
+            if sr2_id != "cid":
+                rs2_active_status = self.reg_status_active[int(parts[3][1:])] > 0
+
+            if  rs1_active_status or rs2_active_status :
+                if rs1_active_status:
+                    sr1_from_forwarding = self.do_data_forwarding(int(parts[2][1:]))
                     if sr1_from_forwarding == "False":
                         stall = True
                     else:
                         sr1_data = sr1_from_forwarding
-                if self.reg_status_active[sr2_id] > 0:
-                    sr2_from_forwarding = self.do_data_forwarding(sr2_id)
+                if rs2_active_status:
+                    sr2_from_forwarding = self.do_data_forwarding(int(parts[3][1:]))
                     if sr2_from_forwarding == "False":
                         stall = True
                     else:
                         sr2_data = sr2_from_forwarding                    
             if stall:
+                self.stall_count+=1
                 return        
 
             if sr1_data is not None:
@@ -219,18 +229,22 @@ class Cores:
             decoded_fetched.append(parts[1]) #rd
 
             dest_id = int(parts[1][1:])
-            sr1_id = int(parts[2][1:])
+            sr1_id = parts[2]
             stall=False
             sr1_data = None
-           
-            if self.reg_status_active[sr1_id] > 0:
-                sr1_from_forwarding = self.do_data_forwarding(sr1_id)
+            rs1_active_status = False
+            if sr1_id != "cid":
+                rs1_active_status = self.reg_status_active[int(parts[2][1:])] > 0 
+                          
+            if rs1_active_status:
+                sr1_from_forwarding = self.do_data_forwarding(int(parts[2][1:]))
                 if sr1_from_forwarding == "False":
                     stall = True
                 else:
                     sr1_data = sr1_from_forwarding
 
             if stall:
+                self.stall_count+=1
                 return 
             #print(sr1_data)
             if sr1_data is not None:
@@ -261,6 +275,7 @@ class Cores:
                         sr1_data = sr1_from_forwarding
                     return
                 if stall:
+                    self.stall_count+=1
                     return 
                 #print(sr1_data)
                 if sr1_data is not None:
@@ -279,14 +294,17 @@ class Cores:
 
         if opcode in ["sw"]:#opcode rs1 offset rs2 
 
-            sr1_id = int(parts[1][1:])
+            sr1_id = parts[1]
             sr2_id = int(parts[3][1:])
             stall=False
             sr1_data = None
             sr2_data = None
-            if self.reg_status_active[sr1_id] > 0 or self.reg_status_active[sr2_id] > 0:
-                if self.reg_status_active[sr1_id] > 0:
-                    sr1_from_forwarding = self.do_data_forwarding(sr1_id)
+            rs1_active_status = False
+            if sr1_id != "cid":
+                rs1_active_status = self.reg_status_active[int(parts[1][1:])] > 0 
+            if rs1_active_status or self.reg_status_active[sr2_id] > 0:
+                if rs1_active_status:
+                    sr1_from_forwarding = self.do_data_forwarding(int(parts[1][1:]))
                     if sr1_from_forwarding == "False":
                         stall = True
                     else:
@@ -298,6 +316,7 @@ class Cores:
                     else:
                         sr2_data = sr2_from_forwarding                    
             if stall:
+                self.stall_count+=1
                 return 
             if sr1_data is not None:
                 decoded_fetched.append(sr1_data)
@@ -313,25 +332,32 @@ class Cores:
 
         if opcode in ["bne","blt","bge","beq"]:#opcode rs1 rs2 label
 
-            sr1_id = int(parts[1][1:])
-            sr2_id = int(parts[2][1:])
+            sr1_id = parts[1]
+            sr2_id = parts[2]
             stall=False
             sr1_data = None
             sr2_data = None
-            if self.reg_status_active[sr1_id] > 0 or self.reg_status_active[sr2_id] > 0:
-                if self.reg_status_active[sr1_id] > 0:
-                    sr1_from_forwarding = self.do_data_forwarding(sr1_id)
+            rs1_active_status = False
+            rs2_active_status = False
+            if sr1_id != "cid":
+                rs1_active_status = self.reg_status_active[int(parts[1][1:])] > 0
+            if sr2_id != "cid":
+                rs2_active_status = self.reg_status_active[int(parts[2][1:])] > 0
+            if rs1_active_status or rs2_active_status:
+                if rs1_active_status:
+                    sr1_from_forwarding = self.do_data_forwarding(int(parts[1][1:]))
                     if sr1_from_forwarding == "False":
                         stall = True
                     else:
                         sr1_data = sr1_from_forwarding
-                if self.reg_status_active[sr2_id] > 0:
-                    sr2_from_forwarding = self.do_data_forwarding(sr2_id)
+                if rs2_active_status:
+                    sr2_from_forwarding = self.do_data_forwarding(int(parts[2][1:]))
                     if sr2_from_forwarding == "False":
                         stall = True
                     else:
                         sr2_data = sr2_from_forwarding                    
             if stall:
+                self.stall_count+=1
                 return 
             if sr1_data is not None:
                 decoded_fetched.append(sr1_data)
@@ -383,6 +409,7 @@ class Cores:
             return
                
         if self.execution_time_rem_ex >0:
+            self.stall_count+=1
             self.execution_time_rem_ex -=1
             return
         
@@ -533,6 +560,7 @@ class Cores:
             return
         
         if self.execution_time_rem_me >0:
+            self.stall_count+=1
             self.execution_time_rem_me -=1
             return
         #print("me",self.coreid)
