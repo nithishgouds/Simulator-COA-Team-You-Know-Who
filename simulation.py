@@ -14,6 +14,7 @@ class Simulator:
         self.cores = [core.Cores(i) for i in range(4)]
         self.program = []
         self.labels_map = {}
+        self.ins_queue=[]
         self.latency_map={
             "add":1,
             "sub": 1,
@@ -33,45 +34,40 @@ class Simulator:
 
 
     def instruction_fetch(self):
-        # if self.fetch_ins == False:
-        #     return
-        # core1pc=self.cores[0].pc
-        # for i in range(1):
-        #     if core1pc//4 >= len(self.program):
-        #         return
-        #     print("if entered",self.fetch_ins)
-        #     if self.fetch_ins[i] == False:
-        #         continue
-        #     if self.fetch_ins[i] == True:
-        #         self.fetch_ins[i]= False
-        #     self.cores[i].ID_register=self.program[core1pc//4]
-        #     print("writing to id",self.program[core1pc//4])
-        #     #print(self.pc_changed)
-        #     if self.pc_changed[i]:
-        #         self.cores[i].pc=self.new_pc[i]
-        #         self.pc_changed[i] = False
-        #         self.cores[i].ID_register=""
-        #         dest_reg=self.cores[i].EX_register[1]
-        #         opcode=self.cores[i].EX_register[0]
-        #         if opcode in ["add","sub","mul","slt","sll","addi","jalr","slli","la","jal","lw"]:
-        #             dest_reg_id=int(dest_reg[1:])
-        #             self.cores[i].reg_status_active[dest_reg_id] -= 1
-        #         self.cores[i].EX_register=[]
-        #         self.fetch_ins[i] = True
-        #     else:#self.pc_changed:
-        #         self.cores[i].pc+=4
+
+        ins_fetch_available = [False,False,False,False]
+
+
+        if self.cores[0].pc == self.cores[1].pc == self.cores[2].pc == self.cores[3].pc:
+            ins_fetch_available = [True,True,True,True]
+            #print("All are equal")
+            self.ins_queue=[]
+        else:
+            #print(self.ins_queue)
+            if not self.ins_queue:
+                self.ins_queue.extend(range(4))
+            access_for_core = self.ins_queue.pop(0)
+            #print(ins_fetch_available)
+            #print(access_for_core)
+            ins_fetch_available[access_for_core] = True
+            #print(ins_fetch_available)
+
+
         
         for i in range(4):
             core1pc=self.cores[i].pc
             #print("if entered",self.fetch_ins,i)
+            #print("fetch_ins",i,self.fetch_ins)
             if self.fetch_ins[i] == False:
                 continue
-            if self.fetch_ins[i] == True:
+            if self.fetch_ins[i] == True and not self.pc_changed[i] and ins_fetch_available[i]:
                 self.fetch_ins[i]= False
+
 
             #print(self.pc_changed)
             if self.pc_changed[i]:
                 self.cores[i].pc=self.new_pc[i]
+                #print(i,self.cores[i].pc)
                 self.pc_changed[i] = False
                 self.cores[i].ID_register=""
                 #print("i bef dest:",i)
@@ -84,15 +80,20 @@ class Simulator:
                 self.cores[i].EX_register=[]
                 self.fetch_ins[i] = True
                 self.cores[i].execute_ID = True
+                continue
                 # self.cores[i].execute_EX = True
                 # self.cores[i].execute_ME = True
-            else:#self.pc_changed:
+            #print(i,ins_fetch_available[i])
+            if ins_fetch_available[i]:#self.pc_changed:
+                #print("entering fetch",i)
                 if core1pc//4 >= len(self.program):
+                    #print("exceeded pc",i)
                     continue
                 self.cores[i].ID_register=self.program[core1pc//4]
-                #print("writing to id",self.program[core1pc//4])
+                #print("writing to id of core",i,self.program[core1pc//4])
                 self.cores[i].pc+=4
             #print("---")
+
             if core1pc//4 >= len(self.program):
                 continue
             
@@ -126,15 +127,17 @@ class Simulator:
         pipeline_active=True
 
         while pipeline_active:
-        #for k in range(25):
+        #for k in range(20):
             for i in range(4):
                 self.cores[i].execute_pipeline()
             self.instruction_fetch()
-            
-            fetch_possible = True
-            if (self.cores[0].pc)//4 >= len(self.program):
-                fetch_possible = False
- 
-            if not fetch_possible and not self.cores[0].ID_register and not self.cores[0].EX_register and not self.cores[0].ME_register and not self.cores[0].WB_register :
+         
+
+            fetch_possible = not all(core.pc // 4 >= len(self.program) for core in self.cores)
+
+            if (not fetch_possible and all(not core.ID_register and not core.EX_register and not core.ME_register and not core.WB_register for core in self.cores)):
                 pipeline_active = False
+
+            # if not fetch_possible and not self.cores[0].ID_register and not self.cores[0].EX_register and not self.cores[0].ME_register and not self.cores[0].WB_register :
+            #     pipeline_active = False
             self.clock += 1

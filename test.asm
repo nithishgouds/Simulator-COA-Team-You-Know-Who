@@ -1,3 +1,5 @@
-lw x1 0(x2)
-addi x0 x1 0
-add x2 x1 x0
+
+bne cid x0 Label 
+addi x5 x6 5 
+Label: 
+addi x8 x9 8
