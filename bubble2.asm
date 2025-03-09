@@ -1,6 +1,6 @@
 .data 
 
-.word 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 0xFFFFFFFF
+.word 0x10 0x2 0x4 -1 4 5 2 0
 
 base: .word 0x0
 
@@ -8,13 +8,14 @@ base: .word 0x0
 
 .text
 
-addi x1 x0 10 # n length of array
+addi x1 x0 9 # n length of array
 
 addi x2 x0 0 # i - index of outer loop
 
 addi x3 x1 -1 # n-1
 
-lw x10 base #base address
+lw x10 base
+#addi x10 x0 0 #base address
 
 addi x11 x0 4 #register to store multiplication of 4 bytes
 
@@ -89,5 +90,5 @@ swapfin:
     
 
 exit:
-
     add x0 x0 x0
+
