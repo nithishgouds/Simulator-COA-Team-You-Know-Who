@@ -1,5 +1,5 @@
-
-bne cid x0 Label 
-addi x5 x6 5 
-Label: 
-addi x8 x9 8
+addi x2 x0 1
+bne cid x2 end
+addi x11 x0 5
+end:
+addi x12 x0 3
