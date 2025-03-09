@@ -20,8 +20,6 @@ add x1 x0 x0
 
 
 
-
-
 addi x1 x0 10 # n length of array
 
 addi x2 x0 0 # i - index of outer loop
