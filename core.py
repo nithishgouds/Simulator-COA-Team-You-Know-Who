@@ -74,24 +74,17 @@ class Cores:
             "la": r"^la\s+x\d{1,2},?\s+\w+$",  # Added "la x1, label"
             "slt": r"^slt\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$"  # Added "slt x1, x2, x3"
         }
-
         for opcode, pattern in patterns.items():
             if re.match(pattern, instruction):
                 return True
         return False
-    def execute(self, pgm, mem, clock, labels_map):
-        instruction = pgm[self.pc]
-        # if not self.invalid_instruction_flag and not self.validate(instruction):
-        #     self.invalid_instruction_flag = True
-        #     print(f"Invalid instruction at PC {self.pc}: '{instruction}'")
-        #     sys.exit() 
-        #     return
-        # if self.invalid_instruction_flag:
-        #     return
-        print("clock cycle:", clock + 1, " core :", self.coreid, " instruction:", pgm[self.pc])
-        #print(labels_map)
-        #parts = re.findall(r'\w+|\d+', pgm[self.pc])
-        parts = re.findall(r'-?\w+', pgm[self.pc])
+
+    # def instruction_fetch(self):
+    #     self.ID_register=self.IF_register
+    #     self.pc += 4
+    #     return
+
+    #def reg_active_status_check(self,reg)
 
     def data_from_EXr(self,dest_id) -> any:
         #print("checking in ex",dest_id)
