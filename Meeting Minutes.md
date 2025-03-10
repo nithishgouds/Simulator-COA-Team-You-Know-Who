@@ -21,6 +21,14 @@ Decisions :
 - Added Latency to pipeline
 
 
+Date : 6 -Mar -2025 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Finished setting up basic pipeline(without data forwarding)
+
+
+
+
 
 Date : 5 -Mar -2025 <br>
 Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
@@ -29,10 +37,6 @@ Decisions :
 
 
 
-Date : 6 -Feb -2025 <br>
-Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
-Decisions : 
-- Finished setting up basic pipeline(without data forwarding)
 
 
 
