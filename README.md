@@ -21,13 +21,14 @@ This project is an Instruction Set Simulator built in Python to simulate the exe
 
 Internal structure:<br>
 - Each core contains 32 registers
-- total size of memory = 4096*4 bytes 
-- In current version all cores are independent and each core can only access 1024*4 bytes of memory which is specific to that core
-### Output is divided into 4 parts:
-- Part1: Clock cycle and core and insruction which is executed<br>
-- Part2: All register values of all cores<br>
-- Part3: Total clock cycles took to run the code<br>
-- Part4: Prints all memory values in form {index of memory}={value stored}<br>
+- total size of memory = 1024*4 bytes 
+- In current version all cores have shared Instruction Fetch unit and shared Memory
+### Output is divided into 5 parts:
+- Part1: First graph simulation shows register values of all cores <br>
+- Part2: Second graph simulation shows Memory <br>
+- Part3: prints the console<br>
+- Part4: Prints stalls in each core and total stalls <br>
+- Part5: IPC for each core and total clock cycles <br>
 
 ---
 
@@ -44,3 +45,9 @@ Doc link: [Meeting Minutes](https://github.com/nithishgouds/Simulator-COA/blob/m
 3. Run the simulator using
    ```bash
    python main.py {filename.asm}
+4. Enter "y" to enable Data Forwarding.
+5. Enter the Latencies of desired opcodes and enter "done" when done entering latencies.
+6. Question given in Doc is done in array_sum.asm to run it 
+   ```bash
+   python main.py array_sum.asm
+

@@ -57,6 +57,9 @@ loop2:
 exit2:
 
     sw x31 0(x28) #storing final sum
+    add x10 x0 x31
+    addi x17 x0 1
+    ecall 
 
 exit:
     add x0 x0 x0 #final sum will be stored in x31 of core 0

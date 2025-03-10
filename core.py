@@ -32,6 +32,8 @@ class Cores:
 
         self.stall_count=0
         self.ins_executed_count=0
+        
+        self.write_back_executed_curr_cycle= False
 
         self.Data_Forwarding = False
         
@@ -57,24 +59,26 @@ class Cores:
 
     def validate(self, instruction):
         patterns = {
-            "add": r"^add\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "addi": r"^addi\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
-            "mul": r"^mul\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "sub": r"^sub\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "lw": r"^lw\s+x\d{1,2},?\s+(\d+\(x\d{1,2}\)|\w+)$",
-            "sw": r"^sw\s+x\d{1,2},?\s+\d+\(x\d{1,2}\)$",
-            "bne": r"^bne\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "blt": r"^blt\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "bge": r"^bge\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "beq": r"^beq\s+x\d{1,2},?\s+x\d{1,2},?\s+\w+$",
-            "jal": r"^jal\s+(x\d{1,2},?\s+)?\w+$",
+            "add": r"^add\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
+            "addi": r"^addi\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+-?\d+$",
+            "mul": r"^mul\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
+            "sub": r"^sub\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
+            "lw": r"^lw\s+(x\d{1,2}|cid),?\s+(\d+\((x\d{1,2}|cid)\)|\w+)$",
+            "sw": r"^sw\s+(x\d{1,2}|cid),?\s+\d+\((x\d{1,2}|cid)\)$",
+            "bne": r"^bne\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
+            "blt": r"^blt\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
+            "bge": r"^bge\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
+            "beq": r"^beq\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
+            "jal": r"^jal\s+((x\d{1,2}|cid),?\s+)?\w+$",
             "j": r"^j\s+\w+$",
-            "jalr": r"^jalr\s+x\d{1,2},?\s+x\d{1,2},?\s+-?\d+$",
-            "sll": r"^sll\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$",
-            "slli": r"^slli\s+x\d{1,2},?\s+x\d{1,2},?\s+\d+$",
-            "la": r"^la\s+x\d{1,2},?\s+\w+$",
-            "slt": r"^slt\s+x\d{1,2},?\s+x\d{1,2},?\s+x\d{1,2}$"
+            "jalr": r"^jalr\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+-?\d+$",
+            "sll": r"^sll\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
+            "slli": r"^slli\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\d+$",
+            "la": r"^la\s+(x\d{1,2}|cid),?\s+\w+$",
+            "slt": r"^slt\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
+            "ecall": r"^ecall$"
         }
+
         
         # Iterate over pattern values only
         for regex in patterns.values():
@@ -146,6 +150,7 @@ class Cores:
             exit()
         #print("entered id",self.execute_ID)
         if self.execute_ID == False:
+            self.stall_count+=1
             return
         
         #print("id decoding",self.pc,self.ID_register)
@@ -362,6 +367,9 @@ class Cores:
 
         if opcode in ["j"]:#opcode label
             decoded_fetched.append(parts[1]) #label
+
+        if opcode in ["ecall"]:#opcode label
+            pass #label
         
         simulation.Simulator.fetch_ins[self.coreid]=True
         self.execute_ID = False
@@ -515,6 +523,17 @@ class Cores:
             #self.pc=new_pc*4
             simulation.Simulator.new_pc[self.coreid] = new_pc*4
             simulation.Simulator.pc_changed[self.coreid] = True 
+        if opcode in ["ecall"]:
+            if self.ME_register or self.WB_register or self.write_back_executed_curr_cycle:
+                self.stall_count+=1
+                return
+            value_in_x10 = self.get_register("x10")
+            value_in_x17 = self.get_register("x17")
+            if value_in_x17 == 1:
+                print(value_in_x10)
+            else:
+                print("currently ecall can only print integers")
+
         #print("before ex:",self.execute_ID)  
         self.execute_ID = True 
         self.execute_EX = False 
@@ -592,7 +611,7 @@ class Cores:
                 reg_id = int(parts[1][1:])
                 self.set_register(reg_id,value)
                 self.reg_status_active[reg_id] -= 1
-        elif opcode in ["bne","blt","bge","beq"]:#opcode rs1 rs2 label
+        elif opcode in ["bne","blt","bge","beq","ecall"]:#opcode rs1 rs2 label
             pass
         elif opcode in ["la","jal"]:#opcode rd/x1 label
             value = int(parts[2])
@@ -605,6 +624,7 @@ class Cores:
             print("error in WB")
             exit()
         self.execute_ME = True
+        self.write_back_executed_curr_cycle=True
         self.ins_executed_count+=1
         self.WB_register=[]
         return
