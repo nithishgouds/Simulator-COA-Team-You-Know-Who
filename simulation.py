@@ -10,7 +10,7 @@ class Simulator:
     fetch_ins = [True] * 4
 
     def __init__(self):
-        self.memory = [0] * (4096) 
+        self.memory = [0] * (1024) 
         self.cores = [core.Cores(i) for i in range(4)]
         self.program = []
         self.labels_map = {}
@@ -44,22 +44,28 @@ class Simulator:
 
         if self.cores[0].pc == self.cores[1].pc == self.cores[2].pc == self.cores[3].pc:
             ins_fetch_available = [True,True,True,True]
-            #print("All are equal")
             self.ins_queue=[]
         else:
-            #print(self.ins_queue)
+            
+            # if not self.ins_queue:
+            #     self.ins_queue.extend(range(4))
+            # access_for_core = self.ins_queue.pop(0)
+            # ins_fetch_available[access_for_core] = True
             if not self.ins_queue:
-                self.ins_queue.extend(range(4))
+                for i in range(4):
+                    if (self.cores[i].pc // 4) >= len(self.program):
+                        continue
+                    self.ins_queue.append(i)
+            #print(self.ins_queue)
             access_for_core = self.ins_queue.pop(0)
-            #print(ins_fetch_available)
-            #print(access_for_core)
             ins_fetch_available[access_for_core] = True
-            #print(ins_fetch_available)
 
 
         
         for i in range(4):
             core1pc=self.cores[i].pc
+
+            self.cores[i].write_back_executed_curr_cycle=False
             #print("if entered",self.fetch_ins,i)
             #print("fetch_ins",i,self.fetch_ins)
             if self.fetch_ins[i] == False:
@@ -141,7 +147,7 @@ class Simulator:
         #print(labels_map)
         self.program=instructions
         self.labels_map=labels_map
-        if len(data_array) >= 4096:
+        if len(data_array) >= 1024:
             print("error : memory overflow")
         for i in range(len(data_array)):
             self.memory[i]=data_array[i]
@@ -163,6 +169,10 @@ class Simulator:
 
         pipeline_active=True
 
+        print(" - - console - - ")
+
+
+
         while pipeline_active:
         #for k in range(20):
             for i in range(4):
@@ -175,6 +185,9 @@ class Simulator:
             if (not fetch_possible and all(not core.ID_register and not core.EX_register and not core.ME_register and not core.WB_register for core in self.cores)):
                 pipeline_active = False
 
+            
+            if not pipeline_active:
+                print(" - - - - - - - - ")
             # if not fetch_possible and not self.cores[0].ID_register and not self.cores[0].EX_register and not self.cores[0].ME_register and not self.cores[0].WB_register :
             #     pipeline_active = False
             self.clock += 1

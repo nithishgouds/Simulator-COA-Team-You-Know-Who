@@ -40,3 +40,33 @@ Date : 12 -Feb -2024 <br>
 Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
 Decisions : 
 - Decided to build the project using python
+
+Date : 5 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Decided to start second phase
+
+Date : 6 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Finished setting up basic pipeline(without data forwarding)
+
+Date : 7 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Added Latency to pipeline
+
+Date : 8 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Added Data Forwarding to pipeline
+
+Date : 9 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Resolved Structural hazards due to single instruction fetch unit
+
+Date : 10 -Feb -2024 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Added ecall and done minor changes
