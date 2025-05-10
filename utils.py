@@ -20,6 +20,7 @@ def read_file(filename):
     line_number_original = 0
     last_label = None  # Keep track of labels that appear alone on a line
     data_store=False
+    data_scp=False
     data_array = []
     data_array_index=0
 
@@ -27,7 +28,6 @@ def read_file(filename):
     with open(filename, "r") as file:
         for line in file:
             line_number_original += 1
-
             
 
             line=line.split("#", 1)[0]
