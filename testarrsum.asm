@@ -42,6 +42,7 @@ final:
 
 bne x1 x0 exit #exit for all cores except core 0
 
+
 add x21 x0 x0 #coreid
 addi x22 x0 4 #4 cores
 add x31 x0 x0 #final sum

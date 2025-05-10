@@ -3,6 +3,7 @@ import sys
 import simulation
 
 
+
 class Cores:
 
     pgm = []
@@ -14,6 +15,7 @@ class Cores:
         self.reg_status_active = [0] * 32
         self.pc = 0
         self.coreid = cid
+        self.sim=None
 
      
         #self.IF_register=""
@@ -29,6 +31,8 @@ class Cores:
         self.execution_time_rem_ex=0
         self.execution_time_rem_me=0
         self.latency_map={}
+
+        self.wait_for_cache=True
 
         self.stall_count=0
         self.ins_executed_count=0
@@ -76,7 +80,8 @@ class Cores:
             "slli": r"^slli\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\d+$",
             "la": r"^la\s+(x\d{1,2}|cid),?\s+\w+$",
             "slt": r"^slt\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
-            "ecall": r"^ecall$"
+            "ecall": r"^ecall$",
+            "sync": r"^sync$"
         }
 
         
@@ -368,7 +373,7 @@ class Cores:
         if opcode in ["j"]:#opcode label
             decoded_fetched.append(parts[1]) #label
 
-        if opcode in ["ecall"]:#opcode label
+        if opcode in ["ecall","sync"]:#opcode label
             pass #label
         
         simulation.Simulator.fetch_ins[self.coreid]=True
@@ -536,7 +541,7 @@ class Cores:
 
         #print("before ex:",self.execute_ID)  
         self.execute_ID = True 
-        self.execute_EX = False 
+        self.execute_EX = False     
         if executed[0] in ["lw","sw","la"] and executed[0] in self.latency_map:
             self.execution_time_rem_me=self.latency_map[executed[0]]-1
         else:
@@ -565,17 +570,38 @@ class Cores:
         mem_fetched=[]
         mem_fetched.append(opcode)
         if opcode == "lw":#opcode rd addr
-            effective_addr=int(parts[2])//4
+            effective_addr=int(parts[2])
             #print(effective_addr)
-            memory_value=self.mem[effective_addr]
+            if self.wait_for_cache==True: 
+                latency=simulation.Simulator.cache_latency(self.sim,address=effective_addr,operation=0)
+                self.execution_time_rem_me=latency-1
+                self.wait_for_cache=False
+                return
+            memory_value=simulation.Simulator.cache_controller(self.sim,address=effective_addr,data=None,operation=0)
+            memory_value2=self.mem[effective_addr//4]
+            if memory_value != memory_value2:
+                print("addr",effective_addr)
+                print("mem",memory_value, memory_value2)
+                print("cache error")
+                
+            #memory_value=self.mem[effective_addr//4]
+            self.wait_for_cache=True
             mem_fetched.append(parts[1])
             mem_fetched.append(memory_value)
             self.WB_register=mem_fetched
 
         elif opcode == "sw":#opcode value addr
-            effective_addr=int(parts[2])//4
+            effective_addr=int(parts[2])
             value=int(parts[1])
-            self.mem[effective_addr] = value
+
+            if self.wait_for_cache==True:
+                latency=simulation.Simulator.cache_latency(self.sim,address=effective_addr,operation=0)
+                self.execution_time_rem_me=latency-1
+                self.wait_for_cache=False
+                return
+            #memory_value=self.mem[effective_addr//4]
+            simulation.Simulator.cache_controller(self.sim,address=effective_addr,data=value,operation=1)
+            self.wait_for_cache=True
             self.WB_register=mem_fetched
         
         else :
@@ -618,7 +644,7 @@ class Cores:
             reg_id = int(parts[1][1:])
             self.set_register(reg_id,value)
             self.reg_status_active[reg_id] -= 1
-        elif opcode in ["j"]:#opcode label    
+        elif opcode in ["j","sync"]:#opcode label    
             pass  
         else:
             print("error in WB")

@@ -2,7 +2,12 @@ import simulation
 import numpy as np
 import matplotlib.pyplot as plt
 sim = simulation.Simulator()
+for i in range(4):
+    sim.cores[i].sim=sim
 sim.run()
+
+for i in range(256):
+    print(f"{i} : {sim.memory[i]} ,{i+256} : {sim.memory[i+256]} ,{i+512} : {sim.memory[i+512]} ,{i+1024} : {sim.memory[i+768]}")
 registers_per_core = [core.registers for core in sim.cores]  
 registers_matrix = np.array(registers_per_core)
 total_stalls = sum(core.stall_count for core in sim.cores)

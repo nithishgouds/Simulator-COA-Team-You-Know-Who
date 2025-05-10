@@ -1,6 +1,8 @@
 import core
 import utils
 import sys
+import cache as cache
+import math
 
 class Simulator:
 
@@ -16,6 +18,28 @@ class Simulator:
         self.labels_map = {}
         self.ins_queue=[]
         self.data_forwarding_enable=input("enable data forwarding y/n :")
+        self.L1I_cache_size = 64  #in bytes
+        self.L1I_associativity = 4
+        self.L1D_cache_size = 64  #in bytes
+        self.L1D_associativity = 4
+        self.L2_cache_size = 128  #in bytes
+        self.L2_associativity = 4
+        self.cache_block_size = 8  #in bytes
+        self.offset_bits_length = int(math.log2(self.cache_block_size))
+        self.offset_mask=(1 << self.offset_bits_length) - 1
+        self.start_of_instructions = 512
+        self.L1D_latency=2
+        self.L1I_latency=2
+        self.L2_latency=4
+        self.memory_latency=10
+        self.IF_sync=[False]*4
+
+        self.IF_stall_count=0
+        self.IF_no_problem_fetching=False
+        self.replacement_policy=0
+        self.L1D=cache.Cache(self.L1D_cache_size, self.cache_block_size, self.L1D_associativity,self.replacement_policy)
+        self.L1I=cache.Cache(self.L1I_cache_size, self.cache_block_size, self.L1I_associativity,self.replacement_policy)
+        self.L2=cache.Cache(self.L2_cache_size, self.cache_block_size, self.L2_associativity,self.replacement_policy)
         self.latency_map={
             "add":1,
             "sub": 1,
@@ -36,6 +60,116 @@ class Simulator:
             "blt":1
         }
 
+    def cache_latency(self, address, operation):
+        latency = 0
+        if operation == 0 or operation == 1:  # Load or Store operation
+            latency = self.L1D_latency
+            if self.L1D.check_in_cache(address) == False:
+                latency += self.L2_latency
+                if self.L2.check_in_cache(address) == False:
+                    latency += self.memory_latency
+        
+        elif operation == 2:  # Instruction fetch operation
+            latency = self.L1I_latency  
+            if self.L1I.check_in_cache(address) == False:
+                latency += self.L2_latency
+                if self.L2.check_in_cache(address) == False:
+                    latency += self.memory_latency
+
+        return latency
+
+
+
+    def cache_controller(self, address, data, operation):
+        if operation == 0:  # Load operation
+            # Check L1D cache first
+            data = self.L1D.fetch(address)
+            #print("address in l1",address,data)
+            if data is None:
+                data = self.L2.fetch(address)
+                #print("address in l2",address,data)
+                if data is None:
+                    #print("address in main",address,data)
+                    data = self.memory[address//4]
+                    temp_data_array=[0]*(self.cache_block_size//4)
+                    offset_bits=address & self.offset_mask
+                    if offset_bits != 0:
+                        address=address-(offset_bits)
+                    for i in range(self.cache_block_size//4):
+                        temp_data_array[i]=self.memory[address//4+i]
+                    temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(address, temp_data_array,False)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    if(temp_value_changed):
+                        for i in range(self.cache_block_size//4):
+                            self.memory[temp_addr//4+i]=temp_data_array[i]
+                else:
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.get_line_data(address)
+                    temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    if(temp_value_changed):
+                        for i in range(self.cache_block_size//4):
+                            self.memory[temp_addr//4+i]=temp_data_array[i]
+            return data
+        elif operation == 1:  # Store operation
+            # Store in L1D cache first
+            success=self.L1D.store(address, data)
+
+            # DONT FORGET                                       TO UPDATE THE MEMORY AFTER END OF SIMULATION,you SHOULD DO IT 
+            self.memory[address//4] = data
+            #print("success L1D",success)
+            if success== False:
+                # If L1D cache miss, store in L2 cache
+                success=self.L2.store(address, data)
+                #print("success L2",success)
+                if success==False:
+                    # If L2 cache miss, store in main memory
+                    self.memory[address//4] = data
+                    # Store in L1D cache for consistency
+                    temp_data_array=[0]*(self.cache_block_size//4)
+                    offset_bits=address & self.offset_mask
+                    if offset_bits != 0:
+                        address=address-(offset_bits)
+                    for i in range(self.cache_block_size//4):
+                        temp_data_array[i]=self.memory[address//4+i]
+                    #print("temp data array",temp_data_array)
+                    temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(address, temp_data_array,False)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    if(temp_value_changed):
+                        for i in range(self.cache_block_size//4):
+                            self.memory[(temp_addr//4)+i]=temp_data_array[i]
+                else:
+                    # If L2 cache hit, update L1D cache
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.get_line_data(address)
+                    temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)    
+                    if(temp_value_changed):
+                        for i in range(self.cache_block_size//4):
+                            self.memory[(temp_addr//4)+i]=temp_data_array[i]
+            # Also store in L2 cache for consistency
+        elif operation == 2:  #cache for L1I as there is no load in it            
+            data = self.L1I.fetch(address)
+            if data is None:
+                data = self.L2.fetch(address)
+                if data is None:
+                    data = self.memory[address//4]
+                    temp_data_array=[0]*(self.cache_block_size//4)
+                    offset_bits=address & self.offset_mask
+                    if offset_bits != 0:
+                        address=address-(offset_bits)
+                    for i in range(self.cache_block_size//4):
+                        temp_data_array[i]=self.memory[address//4+i]
+                    temp_addr,temp_data_array,temp_value_changed=self.L1I.replace_line(address, temp_data_array,False)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                else:
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.get_line_data(address)
+                    temp_addr,temp_data_array,temp_value_changed=self.L1I.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+
+            
+
+            
+
+
 
     def instruction_fetch(self):
 
@@ -44,6 +178,10 @@ class Simulator:
 
         if self.cores[0].pc == self.cores[1].pc == self.cores[2].pc == self.cores[3].pc:
             ins_fetch_available = [True,True,True,True]
+            if self.IF_sync[0] == True:
+                for i in range(4):
+                    self.IF_sync[i] = False
+
             self.ins_queue=[]
         else:
             
@@ -55,12 +193,17 @@ class Simulator:
                 for i in range(4):
                     if (self.cores[i].pc // 4) >= len(self.program):
                         continue
-                    self.ins_queue.append(i)
+                    if self.IF_sync[i] == False:
+                        self.ins_queue.append(i)
             #print(self.ins_queue)
+            if len(self.ins_queue) == 0:
+                print("inavlid use of sync in code")
+                exit()
+                #print("access for core",access_for_core)
             access_for_core = self.ins_queue.pop(0)
             ins_fetch_available[access_for_core] = True
 
-
+        
         
         for i in range(4):
             core1pc=self.cores[i].pc
@@ -71,7 +214,7 @@ class Simulator:
             if self.fetch_ins[i] == False:
                 continue
             if self.fetch_ins[i] == True and not self.pc_changed[i] and ins_fetch_available[i]:
-                self.fetch_ins[i]= False
+                self.fetch_ins[i]= False 
 
 
             #print(self.pc_changed)
@@ -83,9 +226,10 @@ class Simulator:
                 #print("i bef dest:",i)
                 #print("exr bef dest:",self.cores[i].EX_register)
                 if self.cores[i].EX_register :
-                    dest_reg=self.cores[i].EX_register[1]
+                    #dest_reg=self.cores[i].EX_register[1]
                     opcode=self.cores[i].EX_register[0]
                     if opcode in ["add","sub","mul","slt","sll","addi","jalr","slli","la","jal","lw"]:
+                        dest_reg=self.cores[i].EX_register[1]
                         dest_reg_id=int(dest_reg[1:])
                         self.cores[i].reg_status_active[dest_reg_id] -= 1
                 self.cores[i].EX_register=[]
@@ -101,6 +245,11 @@ class Simulator:
                     #print("exceeded pc",i)
                     continue
                 self.cores[i].ID_register=self.program[core1pc//4]
+                if self.program[core1pc//4] == "sync":
+                    self.IF_sync[i] = True
+                I_memory_address=core1pc+self.start_of_instructions*4
+                self.cache_controller(address=I_memory_address,data=None,operation=2)
+                
                 #print("writing to id of core",i,self.program[core1pc//4])
                 self.cores[i].pc+=4
             #print("---")
@@ -151,6 +300,9 @@ class Simulator:
             print("error : memory overflow")
         for i in range(len(data_array)):
             self.memory[i]=data_array[i]
+
+        for i  in range(len(self.program)):
+            self.memory[i+self.start_of_instructions]=self.program[i]
 
         df_enable=False
         if self.data_forwarding_enable =="y":
