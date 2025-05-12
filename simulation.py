@@ -13,13 +13,13 @@ class Simulator:
     fetch_ins = [True] * 4
 
     def __init__(self):
-        self.memory = [0] * (1024) 
+        self.memory = [0]*(1024*16)
         self.memory_scp = [0] * (100)
         self.cores = [core.Cores(i) for i in range(4)]
         self.program = []
         self.labels_map = {}
         self.labels_map_scp={}
-        self.start_of_scp=256
+        self.start_of_scp= len(self.memory)-768
         self.scp_latency=1
         
         self.ins_queue=[]
@@ -50,7 +50,7 @@ class Simulator:
         self.L2_latency = int(cache_config["L2_latency"])
         self.offset_bits_length = int(math.log2(self.cache_block_size))
         self.offset_mask=(1 << self.offset_bits_length) - 1
-        self.start_of_instructions = 512
+        self.start_of_instructions = len(self.memory)-512
         
         self.IF_sync=[False]*4
 
@@ -382,7 +382,7 @@ class Simulator:
         self.program=instructions
         self.labels_map=labels_map
         self.labels_map_scp=labels_map_scp
-        if len(data_array) >= 1024:
+        if len(data_array)>=(1024*16): 
             print("error : memory overflow")
         for i in range(len(data_array)):
             self.memory[i]=data_array[i]

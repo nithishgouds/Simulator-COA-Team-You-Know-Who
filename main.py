@@ -15,7 +15,39 @@ addr_width = 4  # Increase to accommodate large addresses like 4092
 
 # Print header
 
-print("Main Memory (All 4096 bytes) - 4 bytes per line")
+# print("Main Memory (All 4096 bytes) - 4 bytes per line")
+# print(
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}}"
+# )
+
+# # Print values
+# for i in range(256):
+#     addr1 = i * 4
+#     addr2 = (i + 256) * 4
+#     addr3 = (i + 512) * 4
+#     addr4 = (i + 768) * 4
+
+#     data1 = str(sim.memory[i])
+#     data2 = str(sim.memory[i + 256])
+#     data3 = str(sim.memory[i + 512])
+#     data4 = str(sim.memory[i + 768])
+
+#     print(
+#         f"{addr1:<{addr_width}} : {data1:<{data_width}} | "
+#         f"{addr2:<{addr_width}} : {data2:<{data_width}} | "
+#         f"{addr3:<{addr_width}} : {data3:<{data_width}} | "
+#         f"{addr4:<{addr_width}} : {data4:<{data_width}}"
+#     )
+
+start = 1024 * 76     # 8192
+end = 1024 * 80     # 12288
+start_index = start // 4  # index in words
+end_index = end // 4
+
+print("Main Memory (8192 to 12288 bytes) - 4 bytes per line")
 print(
     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
@@ -24,23 +56,25 @@ print(
 )
 
 # Print values
-for i in range(256):
-    addr1 = i * 4
-    addr2 = (i + 256) * 4
-    addr3 = (i + 512) * 4
-    addr4 = (i + 768) * 4
+for i in range(start_index, end_index, 256):  # step by 256 to get 256 rows
+    for j in range(256):
+        addr1 = (i + j) * 4
+        addr2 = (i + j + 256) * 4
+        addr3 = (i + j + 512) * 4
+        addr4 = (i + j + 768) * 4
 
-    data1 = str(sim.memory[i])
-    data2 = str(sim.memory[i + 256])
-    data3 = str(sim.memory[i + 512])
-    data4 = str(sim.memory[i + 768])
+        data1 = str(sim.memory[i + j])
+        data2 = str(sim.memory[i + j + 256])
+        data3 = str(sim.memory[i + j + 512])
+        data4 = str(sim.memory[i + j + 768])
 
-    print(
-        f"{addr1:<{addr_width}} : {data1:<{data_width}} | "
-        f"{addr2:<{addr_width}} : {data2:<{data_width}} | "
-        f"{addr3:<{addr_width}} : {data3:<{data_width}} | "
-        f"{addr4:<{addr_width}} : {data4:<{data_width}}"
-    )
+        print(
+            f"{addr1:<{addr_width}} : {data1:<{data_width}} | "
+            f"{addr2:<{addr_width}} : {data2:<{data_width}} | "
+            f"{addr3:<{addr_width}} : {data3:<{data_width}} | "
+            f"{addr4:<{addr_width}} : {data4:<{data_width}}"
+        )  # only run one 256-row block to cover 4096 bytes
+
 
 
 
