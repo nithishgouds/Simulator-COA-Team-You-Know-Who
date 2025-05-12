@@ -635,7 +635,7 @@ class Cores:
                 if self.execution_time_rem_me != 0:
                     self.wait_for_cache=False
                     return
-            self.mem_scp[effective_addr//4]
+            self.mem_scp[effective_addr//4] = value
             start_of_scp=simulation.Simulator.get_scp_start(self.sim)
             mm_address=effective_addr//4+start_of_scp
             self.mem[mm_address]=value

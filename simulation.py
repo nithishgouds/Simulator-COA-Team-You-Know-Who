@@ -13,7 +13,7 @@ class Simulator:
     fetch_ins = [True] * 4
 
     def __init__(self):
-        self.memory = [0]*(1024*16)
+        self.memory = [0]*(1024*16*2)
         self.memory_scp = [0] * (100)
         self.cores = [core.Cores(i) for i in range(4)]
         self.program = []
@@ -382,7 +382,7 @@ class Simulator:
         self.program=instructions
         self.labels_map=labels_map
         self.labels_map_scp=labels_map_scp
-        if len(data_array)>=(1024*16): 
+        if len(data_array)>=(1024*32): 
             print("error : memory overflow")
         for i in range(len(data_array)):
             self.memory[i]=data_array[i]

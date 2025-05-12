@@ -47,33 +47,33 @@ end = 1024 * 80     # 12288
 start_index = start // 4  # index in words
 end_index = end // 4
 
-print("Main Memory (8192 to 12288 bytes) - 4 bytes per line")
-print(
-    f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
-    f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
-    f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
-    f"{'Addr':<{addr_width}} : {'Data':<{data_width}}"
-)
+# print("Main Memory (8192 to 12288 bytes) - 4 bytes per line")
+# print(
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}} | "
+#     f"{'Addr':<{addr_width}} : {'Data':<{data_width}}"
+# )
 
-# Print values
-for i in range(start_index, end_index, 256):  # step by 256 to get 256 rows
-    for j in range(256):
-        addr1 = (i + j) * 4
-        addr2 = (i + j + 256) * 4
-        addr3 = (i + j + 512) * 4
-        addr4 = (i + j + 768) * 4
+# # Print values
+# for i in range(start_index, end_index, 256):  # step by 256 to get 256 rows
+#     for j in range(256):
+#         addr1 = (i + j) * 4
+#         addr2 = (i + j + 256) * 4
+#         addr3 = (i + j + 512) * 4
+#         addr4 = (i + j + 768) * 4
 
-        data1 = str(sim.memory[i + j])
-        data2 = str(sim.memory[i + j + 256])
-        data3 = str(sim.memory[i + j + 512])
-        data4 = str(sim.memory[i + j + 768])
+#         data1 = str(sim.memory[i + j])
+#         data2 = str(sim.memory[i + j + 256])
+#         data3 = str(sim.memory[i + j + 512])
+#         data4 = str(sim.memory[i + j + 768])
 
-        print(
-            f"{addr1:<{addr_width}} : {data1:<{data_width}} | "
-            f"{addr2:<{addr_width}} : {data2:<{data_width}} | "
-            f"{addr3:<{addr_width}} : {data3:<{data_width}} | "
-            f"{addr4:<{addr_width}} : {data4:<{data_width}}"
-        )  # only run one 256-row block to cover 4096 bytes
+#         print(
+#             f"{addr1:<{addr_width}} : {data1:<{data_width}} | "
+#             f"{addr2:<{addr_width}} : {data2:<{data_width}} | "
+#             f"{addr3:<{addr_width}} : {data3:<{data_width}} | "
+#             f"{addr4:<{addr_width}} : {data4:<{data_width}}"
+#         )  # only run one 256-row block to cover 4096 bytes
 
 
 
@@ -99,9 +99,9 @@ if sim.L1I.cache_accesses != 0:
     L1I_missrate = sim.L1I.cache_misses / sim.L1I.cache_accesses
 if sim.L2.cache_accesses != 0:
     L2D_missrate = sim.L2.cache_misses / sim.L2.cache_accesses
-print("L1D Miss Rate :", L1D_missrate)
-print("L1I Miss Rate :", L1I_missrate)   
-print("L2D Miss Rate :", L2D_missrate)    
+print("L1D Miss Rate :", L1D_missrate*100)
+print("L1I Miss Rate :", L1I_missrate*100)   
+print("L2D Miss Rate :", L2D_missrate*100)    
 print(" - - - - - - - - ")
 fig, ax = plt.subplots(figsize=(15, 6))
 ax.set_title(f"Registers - Cycle {sim.clock}", fontsize=14, fontweight='bold')
