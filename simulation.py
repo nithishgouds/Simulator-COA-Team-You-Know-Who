@@ -1,8 +1,9 @@
 import core
 import utils
 import sys
-import cache as cache
+import cache_lru_srrip as cache
 import math
+import csv
 
 class Simulator:
 
@@ -13,9 +14,14 @@ class Simulator:
 
     def __init__(self):
         self.memory = [0] * (1024) 
+        self.memory_scp = [0] * (100)
         self.cores = [core.Cores(i) for i in range(4)]
         self.program = []
         self.labels_map = {}
+        self.labels_map_scp={}
+        self.start_of_scp=256
+        self.scp_latency=1
+        
         self.ins_queue=[]
         self.data_forwarding_enable=input("enable data forwarding y/n :")
         self.L1I_cache_size = 64  #in bytes
@@ -23,20 +29,34 @@ class Simulator:
         self.L1D_cache_size = 64  #in bytes
         self.L1D_associativity = 4
         self.L2_cache_size = 128  #in bytes
-        self.L2_associativity = 4
+        self.L2_associativity = 8
         self.cache_block_size = 8  #in bytes
+        self.L1D_latency=4
+        self.L1I_latency=4
+        self.L2_latency=8
+        self.memory_latency=20
+        self.cache_config_file = "cache_config.csv"
+        cache_config = self.read_cache_config(self.cache_config_file)
+        self.L1D_cache_size = int(cache_config["L1D_cache_size"])
+        self.L1D_associativity = int(cache_config["L1D_associativity"])
+        self.L1I_cache_size = int(cache_config["L1I_cache_size"])
+        self.L1I_associativity = int(cache_config["L1I_associativity"])
+        self.L2_cache_size = int(cache_config["L2_cache_size"])
+        self.L2_associativity = int(cache_config["L2_associativity"])
+        self.cache_block_size = int(cache_config["cache_block_size"])
+        self.memory_latency = int(cache_config["mm_latency"])
+        self.L1D_latency = int(cache_config["L1D_latency"])
+        self.L1I_latency = int(cache_config["L1I_latency"])
+        self.L2_latency = int(cache_config["L2_latency"])
         self.offset_bits_length = int(math.log2(self.cache_block_size))
         self.offset_mask=(1 << self.offset_bits_length) - 1
         self.start_of_instructions = 512
-        self.L1D_latency=2
-        self.L1I_latency=2
-        self.L2_latency=4
-        self.memory_latency=10
+        
         self.IF_sync=[False]*4
 
         self.IF_stall_count=0
         self.IF_no_problem_fetching=False
-        self.replacement_policy=0
+        self.replacement_policy=self.get_replacement_policy()
         self.L1D=cache.Cache(self.L1D_cache_size, self.cache_block_size, self.L1D_associativity,self.replacement_policy)
         self.L1I=cache.Cache(self.L1I_cache_size, self.cache_block_size, self.L1I_associativity,self.replacement_policy)
         self.L2=cache.Cache(self.L2_cache_size, self.cache_block_size, self.L2_associativity,self.replacement_policy)
@@ -50,6 +70,8 @@ class Simulator:
             "jalr": 1,
             "slli": 1,
             "lw": 1,
+            "lw_spm": 1,
+            "sw_spm": 1,
             "sw": 1,
             "la": 1,
             "jal": 1,
@@ -59,6 +81,46 @@ class Simulator:
             "bge": 1,
             "blt":1
         }
+
+    def get_replacement_policy(self):
+        while True:
+            try:
+                value = int(input("Enter replacement policy (0 for LRU, 1 for SRRIP): "))
+                if value in [0, 1]:
+                    return value
+                else:
+                    print("Invalid input. Please enter 0 or 1.")
+            except ValueError:
+                print("Invalid input. Please enter a numeric value (0 or 1).")
+
+    def read_cache_config(self,filename):
+        config = {}
+
+        with open(filename, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            rows = list(reader)
+
+            # Read L1D configuration
+            l1d_keys = rows[0]
+            l1d_values = list(map(int, rows[1]))
+            config.update(dict(zip(l1d_keys, l1d_values)))
+
+            # Read L1I configuration
+            l1i_keys = rows[2]
+            l1i_values = list(map(int, rows[3]))
+            config.update(dict(zip(l1i_keys, l1i_values)))
+
+            # Read L2 configuration
+            l2_keys = rows[4]
+            l2_values = list(map(int, rows[5]))
+            config.update(dict(zip(l2_keys, l2_values)))
+
+            # Read cache_block_size and mm_latency
+            other_keys = rows[6]
+            other_values = list(map(int, rows[7]))
+            config.update(dict(zip(other_keys, other_values)))
+
+        return config
 
     def cache_latency(self, address, operation):
         latency = 0
@@ -78,7 +140,10 @@ class Simulator:
 
         return latency
 
-
+    def get_scp_latency(self):
+        return self.scp_latency
+    def get_scp_start(self):
+        return self.start_of_scp
 
     def cache_controller(self, address, data, operation):
         if operation == 0:  # Load operation
@@ -92,20 +157,28 @@ class Simulator:
                     #print("address in main",address,data)
                     data = self.memory[address//4]
                     temp_data_array=[0]*(self.cache_block_size//4)
+                    
                     offset_bits=address & self.offset_mask
+                    
                     if offset_bits != 0:
                         address=address-(offset_bits)
                     for i in range(self.cache_block_size//4):
                         temp_data_array[i]=self.memory[address//4+i]
-                    temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(address, temp_data_array,False)
-                    temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
-                    if(temp_value_changed):
+                    #print("temp data array",temp_data_array,address)
+                    temp_addr1,temp_data_array1,temp_value_changed1=self.L1D.replace_line(address, temp_data_array,False)
+                    #print("address after l1 replace no hit",temp_addr1,temp_data_array1)
+                    temp_addr2,temp_data_array2,temp_value_changed2=self.L2.replace_line(temp_addr1, temp_data_array1,temp_value_changed1)
+                    #print("address after l2 replace no hit",temp_addr2,temp_data_array2)
+                    if(temp_value_changed2):
                         for i in range(self.cache_block_size//4):
-                            self.memory[temp_addr//4+i]=temp_data_array[i]
+                            self.memory[temp_addr2//4+i]=temp_data_array[i]
                 else:
                     temp_addr,temp_data_array,temp_value_changed=self.L2.get_line_data(address)
+                    #print("address after l1 replace l2 hit",temp_addr,temp_data_array)
                     temp_addr,temp_data_array,temp_value_changed=self.L1D.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    #print("address after l1 replace l2 hit",temp_addr,temp_data_array)
                     temp_addr,temp_data_array,temp_value_changed=self.L2.replace_line(temp_addr, temp_data_array,temp_value_changed)
+                    #print("address after l1 replace l2 hit",temp_addr,temp_data_array)
                     if(temp_value_changed):
                         for i in range(self.cache_block_size//4):
                             self.memory[temp_addr//4+i]=temp_data_array[i]
@@ -114,7 +187,7 @@ class Simulator:
             # Store in L1D cache first
             success=self.L1D.store(address, data)
 
-            # DONT FORGET                                       TO UPDATE THE MEMORY AFTER END OF SIMULATION,you SHOULD DO IT 
+            
             self.memory[address//4] = data
             #print("success L1D",success)
             if success== False:
@@ -228,7 +301,7 @@ class Simulator:
                 if self.cores[i].EX_register :
                     #dest_reg=self.cores[i].EX_register[1]
                     opcode=self.cores[i].EX_register[0]
-                    if opcode in ["add","sub","mul","slt","sll","addi","jalr","slli","la","jal","lw"]:
+                    if opcode in ["add","sub","mul","slt","sll","addi","jalr","slli","la","jal","lw","lw_scp"]:
                         dest_reg=self.cores[i].EX_register[1]
                         dest_reg_id=int(dest_reg[1:])
                         self.cores[i].reg_status_active[dest_reg_id] -= 1
@@ -249,6 +322,12 @@ class Simulator:
                     self.IF_sync[i] = True
                 I_memory_address=core1pc+self.start_of_instructions*4
                 self.cache_controller(address=I_memory_address,data=None,operation=2)
+
+                if all(ins_fetch_available):
+                    if i == 0:
+                        self.clock += self.cache_latency(I_memory_address,2)
+                else:
+                    self.clock += self.cache_latency(I_memory_address,2)
                 
                 #print("writing to id of core",i,self.program[core1pc//4])
                 self.cores[i].pc+=4
@@ -284,7 +363,12 @@ class Simulator:
             except IndexError:
                 print("Please enter both opcode and latency.")
 
-
+    def merge_labels_duplicates(self,map1, map2):
+        common = set(map1) & set(map2)
+        if common:
+            print(f"Error: Duplicate labels found for Main Memory and ScratchPad Memory: {common}")
+            exit()
+        return {**map1, **map2}
 
     def run(self):
         filename=""
@@ -292,10 +376,12 @@ class Simulator:
             filename=sys.argv[1]  # Print the first argument
         else:
             print("Error: No filename provided")
-        instructions,labels_map,data_array = utils.read_file(filename)
+        instructions,labels_map,data_array,labels_map_scp,data_array_scp = utils.read_file(filename)
+        #instructions,labels_map,data_array = utils.read_file(filename)
         #print(labels_map)
         self.program=instructions
         self.labels_map=labels_map
+        self.labels_map_scp=labels_map_scp
         if len(data_array) >= 1024:
             print("error : memory overflow")
         for i in range(len(data_array)):
@@ -303,6 +389,16 @@ class Simulator:
 
         for i  in range(len(self.program)):
             self.memory[i+self.start_of_instructions]=self.program[i]
+
+        for i in range(len(data_array_scp)):
+            self.memory_scp[i]=data_array_scp[i]
+            self.memory[i+self.start_of_scp]=data_array_scp[i]
+
+        self.labels_map=self.merge_labels_duplicates(self.labels_map,self.labels_map_scp)
+        #print(labels_map)
+        # print(data_array)
+        # print(labels_map_scp)
+        # print(data_array_scp)
 
         df_enable=False
         if self.data_forwarding_enable =="y":
@@ -317,6 +413,8 @@ class Simulator:
             self.cores[i].mem=self.memory
             self.cores[i].Data_Forwarding=df_enable
             self.cores[i].latency_map=self.latency_map
+            self.cores[i].labels_map_scp=self.labels_map_scp
+            self.cores[i].mem_scp=self.memory_scp
 
 
         pipeline_active=True
@@ -343,3 +441,4 @@ class Simulator:
             # if not fetch_possible and not self.cores[0].ID_register and not self.cores[0].EX_register and not self.cores[0].ME_register and not self.cores[0].WB_register :
             #     pipeline_active = False
             self.clock += 1
+            #print("cache",self.L1D)

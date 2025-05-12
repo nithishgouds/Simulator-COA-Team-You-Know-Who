@@ -9,6 +9,8 @@ class Cores:
     pgm = []
     labels_map = {}
     mem = []
+    labels_map_scp = {}
+    mem_scp = []
 
     def __init__(self, cid):
         self.registers = [0] * 32
@@ -68,7 +70,9 @@ class Cores:
             "mul": r"^mul\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
             "sub": r"^sub\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid)$",
             "lw": r"^lw\s+(x\d{1,2}|cid),?\s+(\d+\((x\d{1,2}|cid)\)|\w+)$",
+            "lw_spm": r"^lw_spm\s+(x\d{1,2}|cid),?\s+(\d+\((x\d{1,2}|cid)\)|\w+)$",
             "sw": r"^sw\s+(x\d{1,2}|cid),?\s+\d+\((x\d{1,2}|cid)\)$",
+            "sw_spm": r"^sw_spm\s+(x\d{1,2}|cid),?\s+\d+\((x\d{1,2}|cid)\)$",
             "bne": r"^bne\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
             "blt": r"^blt\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
             "bge": r"^bge\s+(x\d{1,2}|cid),?\s+(x\d{1,2}|cid),?\s+\w+$",
@@ -105,10 +109,10 @@ class Cores:
         #print(parts)
         if not parts:
             return "False"
-        if dest_id == int(parts[1][1:]) and parts[0] not in ["lw","la"]:
+        if dest_id == int(parts[1][1:]) and parts[0] not in ["lw","la","lw_spm"]:
             data=parts[2]
             return data
-        elif dest_id == int(parts[1][1:]) and parts[0] in ["lw","la"]:
+        elif dest_id == int(parts[1][1:]) and parts[0] in ["lw","la","lw_spm"]:
             #print("inside exr but lw")
             return "stall"
         else:
@@ -145,6 +149,10 @@ class Cores:
 
 
         ins=self.ID_register
+
+        if self.execute_ID == False:
+            self.stall_count+=1
+            return
 
         if not ins: 
             return
@@ -245,7 +253,7 @@ class Cores:
             decoded_fetched.append(parts[3])#imm/offset
             #print(decoded_fetched)
 
-        if opcode in ["lw"]:#opcode rd offset rs
+        if opcode in ["lw","lw_spm"]:#opcode rd offset rs
             if len(parts) == 4:
                 decoded_fetched.append(parts[1]) #rd
                 decoded_fetched.append(parts[2]) #offset
@@ -279,7 +287,7 @@ class Cores:
                 dest_id = int(parts[1][1:])
                 self.reg_status_active[dest_id] += 1
 
-        if opcode in ["sw"]:#opcode rs1 offset rs2 
+        if opcode in ["sw","sw_spm"]:#opcode rs1 offset rs2 
 
             sr1_id = parts[1]
             sr2_id = int(parts[3][1:])
@@ -379,7 +387,7 @@ class Cores:
         simulation.Simulator.fetch_ins[self.coreid]=True
         self.execute_ID = False
 
-        if decoded_fetched[0] in ["lw","sw","la"]:
+        if decoded_fetched[0] in ["lw","sw","la","lw_spm","sw_spm"]:
             self.execution_time_rem_ex=0
         elif decoded_fetched[0] in self.latency_map:
             self.execution_time_rem_ex=self.latency_map[decoded_fetched[0]]-1
@@ -449,12 +457,12 @@ class Cores:
                 arthemetic_op = (self.pc + 4)
                 executed.append(arthemetic_op)
         
-        if opcode in ["lw","sw"]:#opcode rd/rs offset rs/rd 
+        if opcode in ["lw","sw","lw_spm","sw_spm"]:#opcode rd/rs offset rs/rd 
             # offset=int(parts[2]) 
             # if offset%4 != 0:
             #     print("offset should only be in multiples of 4")
             #     exit()
-            if opcode == "lw": 
+            if opcode == "lw" or opcode == "lw_spm": 
                 if len(parts) == 4:#lw rd offset rs1
                     offset=int(parts[2]) 
                     if offset%4 != 0:
@@ -469,7 +477,7 @@ class Cores:
                     address=label_value*4
                     executed.append(parts[1])
                     executed.append(address)
-            if opcode == "sw":
+            if opcode == "sw" or opcode == "sw_spm":
                 offset=int(parts[2]) 
                 if offset%4 != 0:
                     print("offset should only be in multiples of 4")
@@ -542,7 +550,7 @@ class Cores:
         #print("before ex:",self.execute_ID)  
         self.execute_ID = True 
         self.execute_EX = False     
-        if executed[0] in ["lw","sw","la"] and executed[0] in self.latency_map:
+        if executed[0] in ["lw","sw","la","lw_spm","sw_spm"] and executed[0] in self.latency_map:
             self.execution_time_rem_me=self.latency_map[executed[0]]-1
         else:
             self.execution_time_rem_me=0        
@@ -580,11 +588,26 @@ class Cores:
             memory_value=simulation.Simulator.cache_controller(self.sim,address=effective_addr,data=None,operation=0)
             memory_value2=self.mem[effective_addr//4]
             if memory_value != memory_value2:
-                print("addr",effective_addr)
-                print("mem",memory_value, memory_value2)
-                print("cache error")
-                
+                print("valdub",memory_value)
+                print("val",memory_value2,"addr",effective_addr)
+                print("error in cache")
+                exit()
+            self.wait_for_cache=True
+            mem_fetched.append(parts[1])
+            mem_fetched.append(memory_value)
+            self.WB_register=mem_fetched
+
+        elif opcode == "lw_spm":#opcode rd addr
+            effective_addr=int(parts[2])
+            
+            if self.wait_for_cache==True: 
+                latency=simulation.Simulator.get_scp_latency(self.sim)
+                self.execution_time_rem_me=latency-1
+                if self.execution_time_rem_me != 0:
+                    self.wait_for_cache=False
+                    return
             #memory_value=self.mem[effective_addr//4]
+            memory_value=self.mem_scp[effective_addr//4]
             self.wait_for_cache=True
             mem_fetched.append(parts[1])
             mem_fetched.append(memory_value)
@@ -601,6 +624,22 @@ class Cores:
                 return
             #memory_value=self.mem[effective_addr//4]
             simulation.Simulator.cache_controller(self.sim,address=effective_addr,data=value,operation=1)
+            self.wait_for_cache=True
+            self.WB_register=mem_fetched
+        elif opcode == "sw_spm":#opcode value addr
+            effective_addr=int(parts[2])
+            value=int(parts[1])
+            if self.wait_for_cache==True:
+                latency=simulation.Simulator.get_scp_latency(self.sim)
+                self.execution_time_rem_me=latency-1
+                if self.execution_time_rem_me != 0:
+                    self.wait_for_cache=False
+                    return
+            self.mem_scp[effective_addr//4]
+            start_of_scp=simulation.Simulator.get_scp_start(self.sim)
+            mm_address=effective_addr//4+start_of_scp
+            self.mem[mm_address]=value
+
             self.wait_for_cache=True
             self.WB_register=mem_fetched
         
@@ -631,8 +670,8 @@ class Cores:
             reg_id = int(parts[1][1:])
             self.set_register(reg_id,value)
             self.reg_status_active[reg_id] -= 1           
-        elif opcode in ["lw","sw"]:#opcode rd value for lw
-            if opcode == "lw":
+        elif opcode in ["lw","sw","lw_spm","sw_spm"]:#opcode rd value for lw
+            if opcode == "lw" or opcode == "lw_spm":
                 value = int(parts[2])
                 reg_id = int(parts[1][1:])
                 self.set_register(reg_id,value)

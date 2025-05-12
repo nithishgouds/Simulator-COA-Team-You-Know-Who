@@ -1,0 +1,8 @@
+L1D_cache_size,L1D_associativity,L1D_latency
+64,4,4
+L1I_cache_size,L1I_associativity,L1I_latency
+64,4,4
+L2_cache_size,L2_associativity,L2_latency
+128,8,8
+cache_block_size,mm_latency
+8,20
