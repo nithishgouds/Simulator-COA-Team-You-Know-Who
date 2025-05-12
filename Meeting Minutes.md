@@ -1,3 +1,21 @@
+
+Date : 11 -Apr -2025 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Fixed bugs in cache class and cache controller
+- Added scratchpad memory
+- written test codes for scratchpad memory and array sum
+
+Date : 10 -Apr -2025 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Added sync and cache controller
+
+Date : 20 -Apr -2025 <br>
+Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
+Decisions : 
+- Added cache class
+
 Date : 10 -Mar -2025 <br>
 Members : S. Sri Nithish Goud, Jakka Anirudh Reddy
 Decisions : 
