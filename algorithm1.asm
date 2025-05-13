@@ -52,6 +52,7 @@ sum_loop:
     addi x12 x12 1          # i++
     j sum_loop
 
+
 store_total:
     la x11 sum 
     addi x11 x11 0          # Point to the last word (total sum location)
