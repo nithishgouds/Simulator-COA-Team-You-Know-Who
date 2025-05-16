@@ -99,9 +99,9 @@ if sim.L1I.cache_accesses != 0:
     L1I_missrate = sim.L1I.cache_misses / sim.L1I.cache_accesses
 if sim.L2.cache_accesses != 0:
     L2D_missrate = sim.L2.cache_misses / sim.L2.cache_accesses
-print("L1D Miss Rate :", L1D_missrate*100)
-print("L1I Miss Rate :", L1I_missrate*100)   
-print("L2D Miss Rate :", L2D_missrate*100)    
+print("L1D Miss Rate :", L1D_missrate*100, "%")
+print("L1I Miss Rate :", L1I_missrate*100, "%")   
+print("L2D Miss Rate :", L2D_missrate*100,"%")    
 print(" - - - - - - - - ")
 fig, ax = plt.subplots(figsize=(15, 6))
 ax.set_title(f"Registers - Cycle {sim.clock}", fontsize=14, fontweight='bold')
