@@ -109,7 +109,10 @@ class Cores:
         #print(parts)
         if not parts:
             return "False"
+        if len(parts) <=1:
+            return "False"
         if dest_id == int(parts[1][1:]) and parts[0] not in ["lw","la","lw_spm"]:
+            
             data=parts[2]
             return data
         elif dest_id == int(parts[1][1:]) and parts[0] in ["lw","la","lw_spm"]:
@@ -196,6 +199,7 @@ class Cores:
                     else:
                         sr1_data = sr1_from_forwarding
                 if rs2_active_status:
+                    #print(parts)
                     sr2_from_forwarding = self.do_data_forwarding(int(parts[3][1:]))
                     if sr2_from_forwarding == "False":
                         stall = True
@@ -339,7 +343,9 @@ class Cores:
             if sr2_id != "cid":
                 rs2_active_status = self.reg_status_active[int(parts[2][1:])] > 0
             if rs1_active_status or rs2_active_status:
+                #print(parts)
                 if rs1_active_status:
+
                     sr1_from_forwarding = self.do_data_forwarding(int(parts[1][1:]))
                     if sr1_from_forwarding == "False":
                         stall = True
